@@ -2,112 +2,136 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>四杆机构传动角动态演示</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
+        :root {
+            --primary-color: #3182ce;
+            --bg-color: #f0f4f8;
+            --panel-bg: white;
+            --text-main: #2d3748;
+            --text-sub: #718096;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
             background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-            color: #2d3748;
-            line-height: 1.6;
-            min-height: 100vh;
-            padding: 20px;
+            color: var(--text-main);
+            /* PC端默认固定高度，防止双重滚动条 */
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
         }
         
         .app-container {
-            max-width: 1400px;
+            width: 100%;
+            height: 100%;
+            max-width: 1600px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            padding: 15px;
+            gap: 15px;
+            overflow-y: auto; /* 允许内容过多时内部滚动 */
         }
         
+        /* --- 顶部 Header --- */
         header {
-            text-align: center;
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            border-bottom: 5px solid #3182ce;
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            border-bottom: 4px solid var(--primary-color);
         }
         
         h1 {
-            color: #2d3748;
-            margin-bottom: 10px;
-            font-size: 2.2rem;
+            font-size: 1.5rem;
+            color: var(--text-main);
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 15px;
+            gap: 10px;
+            text-align: center;
         }
         
         .subtitle {
-            color: #718096;
-            font-size: 1.2rem;
-            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-sub);
             background: #f7fafc;
-            padding: 8px 16px;
-            border-radius: 50px;
-            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
             margin-top: 8px;
+            font-weight: 500;
         }
         
+        /* --- 中间主内容区 (左右布局) --- */
         .main-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            height: calc(100vh - 180px);
+            display: flex;
+            gap: 15px;
+            /* PC端让中间区域占据剩余空间，但不强制撑满导致无法显示底部 */
+            flex: 1; 
+            min-height: 0; 
         }
         
-        @media (max-width: 1100px) {
-            .main-content {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-        }
-        
+        /* 左侧：仿真视图容器 */
         .simulation-container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+            flex: 2; /* 占据更多空间 */
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            height: 100%;
+            min-width: 0;
+            position: relative;
         }
         
         .simulation-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #edf2f7;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #edf2f7;
         }
         
         .simulation-title {
-            color: #3182ce;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 600;
         }
         
+        .value-display {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            background: var(--primary-color);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        
+        /* Canvas 区域 */
         .canvas-wrapper {
-            flex: 1;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 3px solid #e2e8f0;
+            flex: 1; 
+            min-height: 400px; /* 保证PC端有足够高度 */
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
             background: #f8fafc;
             position: relative;
-            min-height: 500px;
+            overflow: hidden;
+            touch-action: none;
         }
         
         canvas {
@@ -115,531 +139,291 @@
             width: 100%;
             height: 100%;
         }
-        
-        .control-container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            max-height: 100%;
-        }
-        
-        .control-title {
-            color: #3182ce;
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #edf2f7;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .control-group {
-            margin-bottom: 22px;
-        }
-        
-        .control-label {
-            display: block;
-            margin-bottom: 12px;
-            font-weight: 600;
-            color: #4a5568;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .slider-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        
-        .slider-icon {
-            font-size: 1.2rem;
-            color: #718096;
-            width: 30px;
-            text-align: center;
-        }
-        
-        input[type="range"] {
-            flex: 1;
-            height: 10px;
-            border-radius: 6px;
-            background: #e2e8f0;
-            outline: none;
-            margin: 0 15px;
-            -webkit-appearance: none;
-            transition: background 0.3s;
-        }
-        
-        input[type="range"]:hover {
-            background: #cbd5e0;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #3182ce;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
-            border: 3px solid white;
-            transition: all 0.2s;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb:hover {
-            background: #2c5282;
-            transform: scale(1.1);
-        }
-        
-        input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #3182ce;
-            cursor: pointer;
-            border: 3px solid white;
-            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
-        }
-        
-        .value-display {
-            min-width: 90px;
-            text-align: center;
-            font-weight: 700;
-            color: white;
-            font-size: 1rem;
-            background: linear-gradient(135deg, #3182ce, #2c5282);
-            padding: 6px 12px;
-            border-radius: 6px;
-            box-shadow: 0 4px 6px rgba(49, 130, 206, 0.2);
-        }
-        
-        .button-group {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin: 20px 0;
-        }
-        
-        button {
-            padding: 14px 8px;
-            border: none;
+
+        /* 浮动提示框 */
+        .canvas-overlay, .instruction {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
             border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 5;
+            max-width: 260px;
+            pointer-events: none;
         }
+        .canvas-overlay { top: 15px; left: 15px; }
+        .instruction { bottom: 15px; right: 15px; }
+
+        .overlay-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #2d3748; }
+        .overlay-info { font-size: 0.85rem; line-height: 1.5; color: #4a5568; }
         
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        button:active {
-            transform: translateY(-1px);
-        }
-        
-        .start-btn {
-            background: linear-gradient(135deg, #38a169, #2f855a);
-            color: white;
-        }
-        
-        .pause-btn {
-            background: linear-gradient(135deg, #e53e3e, #c53030);
-            color: white;
-        }
-        
-        .reset-btn {
-            background: linear-gradient(135deg, #3182ce, #2c5282);
-            color: white;
-        }
-        
-        .data-panel {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .data-box {
-            background: #f7fafc;
-            border-radius: 10px;
-            padding: 16px;
-            text-align: center;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-            min-height: 90px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .data-box:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-            border-color: #3182ce;
-        }
-        
-        .data-label {
-            font-size: 0.95rem;
-            color: #718096;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        .data-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #2d3748;
-            word-break: break-word;
-            overflow-wrap: break-word;
-        }
-        
-        .highlight {
-            color: #e53e3e;
-        }
-        
-        .special-info {
-            margin-top: 20px;
-        }
-        
-        .special-title {
-            color: #3182ce;
-            margin-bottom: 12px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .min-angle-box {
-            background: linear-gradient(135deg, #fff5f5, #fed7d7);
-            border: 2px solid #fc8181;
-            padding: 18px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .min-angle-title {
-            color: #c53030;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .min-angle-data {
-            display: flex;
-            justify-content: space-between;
-            font-size: 1.05rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-        
-        .min-angle-data:last-child {
-            margin-bottom: 0;
-        }
-        
-        .rotation-box {
-            background: linear-gradient(135deg, #e6fffa, #b2f5ea);
-            border: 2px solid #38b2ac;
-            padding: 18px;
-            border-radius: 10px;
-        }
-        
-        .rotation-title {
-            color: #2c7a7b;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .rotation-value {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: #2c7a7b;
-            text-align: center;
-            margin: 10px 0;
-        }
-        
-        .rotation-label {
-            text-align: center;
-            color: #4a5568;
-            font-weight: 600;
-        }
-        
+        /* 图例 */
         .legend {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 2px solid #e2e8f0;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #edf2f7;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             background: #f7fafc;
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 6px;
+            font-size: 0.85rem;
             border: 1px solid #e2e8f0;
         }
-        
-        .legend-color {
-            width: 18px;
-            height: 18px;
-            border-radius: 4px;
+        .legend-color { width: 14px; height: 14px; border-radius: 3px; }
+
+        /* 右侧：控制面板 */
+        .control-container {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            overflow-y: auto;
+            min-width: 320px;
         }
-        
-        .info-panel {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-top: 20px;
+
+        .control-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #edf2f7;
         }
-        
-        .info-title {
-            color: #3182ce;
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #edf2f7;
+
+        .control-group { margin-bottom: 20px; }
+        .control-label {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            color: #4a5568;
+        }
+
+        /* 滑块 */
+        .slider-container {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* 按钮 */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 0;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        .start-btn { background: linear-gradient(135deg, #38a169, #2f855a); }
+        .pause-btn { background: linear-gradient(135deg, #e53e3e, #c53030); }
+        .reset-btn { background: linear-gradient(135deg, #3182ce, #2c5282); }
+
+        /* 数据网格 */
+        .data-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .data-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .data-label { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px; }
+        .data-value { font-size: 1.4rem; font-weight: 700; color: var(--text-main); }
+        .highlight { color: #e53e3e; }
+
+        /* 信息框 */
+        .min-angle-box, .rotation-box, .qr-box {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .min-angle-title, .rotation-title, .qr-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2c5282;
+        }
+        .min-angle-data {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
         
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        /* --- 底部说明区 (保留) --- */
+        .info-panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .info-title {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .info-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
-            margin-top: 15px;
         }
-        
+
         .info-card {
             background: #f7fafc;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #3182ce;
-            transition: all 0.3s ease;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
         }
-        
-        .info-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-        }
-        
-        .info-card h3 {
-            color: #2d3748;
-            margin-bottom: 12px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .info-card p {
-            color: #4a5568;
-            line-height: 1.6;
-            font-size: 1rem;
-        }
-        
+        .info-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #2d3748; }
+        .info-card p { font-size: 0.95rem; color: #4a5568; line-height: 1.6; }
+
+        /* --- 标记点 (原样保留) --- */
         .position-marker {
             position: absolute;
             width: 14px;
             height: 14px;
             border-radius: 50%;
             background: #e53e3e;
-            border: 3px solid white;
+            border: 2px solid white;
             box-shadow: 0 0 0 2px #e53e3e;
             z-index: 10;
             pointer-events: none;
-            animation: pulse 2s infinite;
         }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(229, 62, 62, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
-        }
-        
         .position-label {
             position: absolute;
             background: #e53e3e;
             color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
             z-index: 10;
             pointer-events: none;
             white-space: nowrap;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
-        }
-        
-        .position-label:after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -6px;
-            border-width: 6px;
-            border-style: solid;
-            border-color: #e53e3e transparent transparent transparent;
-        }
-        
-        .canvas-overlay {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-            z-index: 5;
-            max-width: 280px;
-        }
-        
-        .overlay-title {
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 8px;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .overlay-info {
-            color: #4a5568;
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-        
-        .instruction {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-            z-index: 5;
-            max-width: 280px;
         }
 
-        /* --- 新增二维码相关样式 --- */
-        .qr-box {
-            background: white;
-            border: 2px dashed #cbd5e0;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .qr-title {
-            color: #4a5568;
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        #qrcode {
-            display: flex;
-            justify-content: center;
-            margin: 10px 0;
-            padding: 10px;
-            background: #fff;
-            border-radius: 8px;
-        }
-
-        .qr-tip {
-            font-size: 0.85rem;
-            color: #718096;
-            margin-top: 5px;
-        }
-        
-        @media (max-width: 768px) {
+        /* --- 响应式适配核心 (断点：900px) --- */
+        @media (max-width: 900px) {
+            body { 
+                height: auto; 
+                min-height: 100vh; 
+                overflow-y: auto; /* 手机端允许整页滚动 */
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .app-container { 
+                padding: 10px; 
+                gap: 10px;
+                overflow: visible; /* 让内容撑开高度 */
+            }
+            
             .main-content {
+                flex-direction: column; /* 改为垂直堆叠 */
+                gap: 10px;
+            }
+
+            /* 仿真区高度自适应 */
+            .simulation-container {
                 height: auto;
+                min-height: auto;
             }
-            
+
             .canvas-wrapper {
-                min-height: 400px;
+                min-height: 60vw; /* 宽度变窄时，保持适当的高度比例 */
+                max-height: 400px;
             }
+
+            /* 控制面板全宽 */
+            .control-container {
+                min-width: 100%;
+                overflow: visible;
+            }
+
+            h1 { font-size: 1.2rem; }
+            .subtitle { font-size: 0.8rem; padding: 4px 10px; }
             
-            .button-group {
-                grid-template-columns: 1fr;
-            }
+            /* 调整浮动提示位置，避免遮挡 */
+            .canvas-overlay { top: 5px; left: 5px; padding: 8px; max-width: 180px; }
+            .overlay-title { font-size: 0.85rem; }
+            .overlay-info { font-size: 0.75rem; }
+            .instruction { display: none; } /* 手机屏幕小，隐藏非必要提示 */
             
-            .data-panel {
-                grid-template-columns: 1fr;
-            }
+            /* 数据面板变更为 4 列，利用横向空间 */
+            .data-panel { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+            .data-box { padding: 8px 4px; }
+            .data-value { font-size: 1.1rem; }
+            .data-label { font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             
-            .info-content {
-                grid-template-columns: 1fr;
-            }
+            /* 说明区域调整 */
+            .info-content { grid-template-columns: 1fr; }
             
-            h1 {
-                font-size: 1.6rem;
-            }
-            
-            .subtitle {
-                font-size: 0.9rem;
-            }
-            
-            .data-value {
-                font-size: 1.6rem;
-            }
-            
-            .rotation-value {
-                font-size: 2rem;
-            }
+            /* 隐藏二维码（手机上看无需扫码） */
+            .qr-box { display: none; }
         }
-        
+
+        /* 超小屏幕适配 */
         @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            
-            .app-container {
-                gap: 15px;
-            }
-            
-            header {
-                padding: 15px;
-            }
-            
-            .simulation-container, .control-container, .info-panel {
-                padding: 15px;
-            }
-            
-            h1 {
-                font-size: 1.4rem;
-            }
+            .data-panel { grid-template-columns: repeat(2, 1fr); }
+            .button-group { gap: 6px; }
+            button { font-size: 0.85rem; padding: 10px 0; }
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -664,43 +448,24 @@
                     <div class="canvas-overlay">
                         <div class="overlay-title"><i class="fas fa-info-circle"></i> 传动角定义</div>
                         <div class="overlay-info">
-                            传动角是连杆与摇杆之间所夹的锐角。传动角越大，传力性能越好。当传动角为90°时，传力性能最佳；当传动角接近0°时，机构处于死点位置。
+                            传动角是连杆与摇杆之间所夹的锐角。传动角越大，传力性能越好。
                         </div>
                     </div>
                     
                     <div class="instruction">
                         <div class="overlay-title"><i class="fas fa-mouse-pointer"></i> 操作提示</div>
                         <div class="overlay-info">
-                            使用右侧控制面板调整机构运动速度，或手动拖动角度滑块观察不同位置的传动角变化。
+                            拖动滑块或点击按钮控制运动。
                         </div>
                     </div>
                 </div>
                 
                 <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #2d3748;"></div>
-                        <span>机架 (固定杆)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #e53e3e;"></div>
-                        <span>曲柄 (输入杆)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #3182ce;"></div>
-                        <span>连杆</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #38a169;"></div>
-                        <span>摇杆 (输出杆)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #805ad5; width: 10px; height: 10px; border-radius: 50%;"></div>
-                        <span>传动角指示</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #e53e3e; width: 10px; height: 10px; border-radius: 50%;"></div>
-                        <span>最小传动角位置</span>
-                    </div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #2d3748;"></div>机架</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #e53e3e;"></div>曲柄</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #3182ce;"></div>连杆</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #38a169;"></div>摇杆</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #805ad5;"></div>传动角</div>
                 </div>
             </div>
             
@@ -710,33 +475,23 @@
                 <div class="control-group">
                     <label class="control-label"><i class="fas fa-tachometer-alt"></i> 曲柄转速控制</label>
                     <div class="slider-container">
-                        <div class="slider-icon"><i class="fas fa-turtle"></i></div>
+                        <i class="fas fa-minus slider-icon" style="color:#718096"></i>
                         <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
-                        <div class="slider-icon"><i class="fas fa-rabbit"></i></div>
-                        <span class="value-display" id="speedValue">1.0 rad/s</span>
-                    </div>
+                        <i class="fas fa-plus slider-icon" style="color:#718096"></i>
+                        <span id="speedValue" style="display:none">1.0</span> </div>
                 </div>
                 
                 <div class="control-group">
-                    <label class="control-label"><i class="fas fa-circle"></i> 曲柄角度调整</label>
+                    <label class="control-label"><i class="fas fa-circle"></i> 曲柄角度 (<span id="angleValue">0°</span>)</label>
                     <div class="slider-container">
-                        <div class="slider-icon">0°</div>
                         <input type="range" id="angleSlider" min="0" max="360" step="1" value="0">
-                        <div class="slider-icon">360°</div>
-                        <span class="value-display" id="angleValue">0°</span>
                     </div>
                 </div>
                 
                 <div class="button-group">
-                    <button id="startBtn" class="start-btn">
-                        <i class="fas fa-play"></i> 开始运动
-                    </button>
-                    <button id="pauseBtn" class="pause-btn">
-                        <i class="fas fa-pause"></i> 暂停
-                    </button>
-                    <button id="resetBtn" class="reset-btn">
-                        <i class="fas fa-redo"></i> 重置
-                    </button>
+                    <button id="startBtn" class="start-btn"><i class="fas fa-play"></i> 开始</button>
+                    <button id="pauseBtn" class="pause-btn"><i class="fas fa-pause"></i> 暂停</button>
+                    <button id="resetBtn" class="reset-btn"><i class="fas fa-redo"></i> 重置</button>
                 </div>
                 
                 <div class="data-panel">
@@ -758,41 +513,36 @@
                     </div>
                 </div>
                 
-                <div class="special-info">
-                    <div class="special-title">
-                        <i class="fas fa-bullseye"></i> 最小传动角位置信息
+                <div class="min-angle-box">
+                    <div class="min-angle-title">
+                        <i class="fas fa-angle-double-down"></i> 最小传动角位置
                     </div>
-                    
-                    <div class="min-angle-box">
-                        <div class="min-angle-title">
-                            <i class="fas fa-angle-double-down"></i> 最小传动角位置
-                        </div>
-                        <div class="min-angle-data">
-                            <span>最小传动角：</span>
-                            <span id="minTransmissionAngleValue">90.0°</span>
-                        </div>
-                        <div class="min-angle-data">
-                            <span>对应曲柄角度：</span>
-                            <span id="minAnglePosition">0°</span>
-                        </div>
+                    <div class="min-angle-data">
+                        <span>最小传动角：</span>
+                        <span id="minTransmissionAngleValue">90.0°</span>
                     </div>
-                    
-                    <div class="rotation-box">
-                        <div class="rotation-title">
-                            <i class="fas fa-redo-alt"></i> 曲柄转动情况
-                        </div>
-                        <div class="rotation-value" id="rotationCount">0</div>
-                        <div class="rotation-label">转动圈数</div>
+                    <div class="min-angle-data">
+                        <span>对应曲柄角度：</span>
+                        <span id="minAnglePosition">0°</span>
                     </div>
+                </div>
+                
+                <div class="rotation-box">
+                    <div class="rotation-title">
+                        <i class="fas fa-redo-alt"></i> 运行数据
+                    </div>
+                    <div class="min-angle-data">
+                        <span>转动圈数：</span>
+                        <span id="rotationCount" style="font-weight:bold; color:#2c7a7b">0</span>
+                    </div>
+                </div>
 
-                    <div class="qr-box">
-                        <div class="qr-title">
-                            <i class="fas fa-mobile-alt"></i> 手机扫码演示
-                        </div>
-                        <div id="qrcode"></div>
-                        <p class="qr-tip">扫描上方二维码在手机打开</p>
+                <div class="qr-box">
+                    <div class="qr-title">
+                        <i class="fas fa-mobile-alt"></i> 手机扫码演示
                     </div>
-
+                    <div id="qrcode"></div>
+                    <p class="qr-tip" style="font-size:0.8rem; color:#718096; margin-top:5px;">扫描二维码在手机打开</p>
                 </div>
             </div>
         </div>
@@ -852,7 +602,7 @@
         
         // 获取DOM元素
         const speedSlider = document.getElementById('speedSlider');
-        const speedValue = document.getElementById('speedValue');
+        const speedValue = document.getElementById('speedValue'); // 虽在HTML隐藏，但JS逻辑保留防报错
         const angleSlider = document.getElementById('angleSlider');
         const angleValue = document.getElementById('angleValue');
         const transmissionAngleValue = document.getElementById('transmissionAngleValue');
@@ -878,21 +628,16 @@
             // 更新显示
             updateDisplay();
 
-            // 生成二维码 (新增代码)
+            // 生成二维码
             generateQRCode();
         }
 
-        // 生成二维码函数 (新增代码)
+        // 生成二维码函数
         function generateQRCode() {
-            // 清空已有内容
             const container = document.getElementById("qrcode");
+            if(!container) return;
             container.innerHTML = "";
-            
-            // 获取当前页面URL
             const currentUrl = window.location.href;
-            
-            // 只有当不是以 file:// 开头时才生成有意义的二维码
-            // 或者即使是 file:// 也生成，但用户需知悉无法跨设备扫描
             new QRCode(container, {
                 text: currentUrl,
                 width: 128,
@@ -905,47 +650,32 @@
         
         // 计算四杆机构各点位置
         function calculateMechanismPositions(angleDeg) {
-            // 转换为弧度，注意：顺时针旋转角度增加
             const angle = angleDeg * Math.PI / 180;
-            
-            // 计算缩放比例，使机构在画布中显示得足够大
+            // 优化：在移动端保持合适的缩放比例
             const scale = Math.min(canvas.width, canvas.height) / 250;
             
-            // 机架固定点（机架水平放置，在画布中下方）
             const frameX = canvas.width / 2;
             const frameY = canvas.height * 0.75;
-            const fixedPoint1 = { 
-                x: frameX - (frameLength/2) * scale, 
-                y: frameY 
-            };  // 左固定点（曲柄固定点）
-            const fixedPoint2 = { 
-                x: frameX + (frameLength/2) * scale, 
-                y: frameY 
-            };  // 右固定点（摇杆固定点）
+            const fixedPoint1 = { x: frameX - (frameLength/2) * scale, y: frameY };
+            const fixedPoint2 = { x: frameX + (frameLength/2) * scale, y: frameY };
             
-            // 曲柄端点（顺时针旋转，0°时曲柄水平向右）
             const crankEnd = {
                 x: fixedPoint1.x + crankLength * scale * Math.cos(angle),
                 y: fixedPoint1.y + crankLength * scale * Math.sin(angle)
             };
             
-            // 计算摇杆位置（使用几何方法求解四杆机构位置）
-            // 已知：固定点2位置，摇杆长度，连杆长度，曲柄端点位置
             const dx = crankEnd.x - fixedPoint2.x;
             const dy = crankEnd.y - fixedPoint2.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // 检查是否存在有效解（三角不等式）
             if (distance > couplerLength * scale + rockerLength * scale || 
                 distance < Math.abs(couplerLength * scale - rockerLength * scale)) {
-                // 无解，返回近似值
+                
                 const angleToCrank = Math.atan2(dy, dx);
                 const rockerEnd = {
                     x: fixedPoint2.x + rockerLength * scale * Math.cos(angleToCrank),
                     y: fixedPoint2.y + rockerLength * scale * Math.sin(angleToCrank)
                 };
-                
-                // 即使无解，也尝试计算传动角
                 calculateTransmissionAngle(crankEnd, rockerEnd, fixedPoint2);
                 
                 return {
@@ -958,25 +688,17 @@
                 };
             }
             
-            // 使用余弦定理计算摇杆角度
             const cosRockerAngle = (rockerLength * rockerLength * scale * scale + distance * distance - couplerLength * couplerLength * scale * scale) / 
                                    (2 * rockerLength * scale * distance);
-            
-            // 确保cos值在有效范围内
             const cosClamped = Math.max(-1, Math.min(1, cosRockerAngle));
-            
-            // 有两种装配方式，选择摇杆在上方的一种
-            // 计算摇杆与水平线的夹角
             const baseAngle = Math.atan2(dy, dx);
             const rockerAngle = baseAngle + Math.acos(cosClamped);
             
-            // 摇杆端点
             const rockerEnd = {
                 x: fixedPoint2.x + rockerLength * scale * Math.cos(rockerAngle),
                 y: fixedPoint2.y + rockerLength * scale * Math.sin(rockerAngle)
             };
             
-            // 计算传动角
             calculateTransmissionAngle(crankEnd, rockerEnd, fixedPoint2);
             
             return {
@@ -989,26 +711,14 @@
             };
         }
         
-        // 计算传动角
         function calculateTransmissionAngle(crankEnd, rockerEnd, rockerFixed) {
-            // 摇杆方向向量（从摇杆固定点到摇杆端点）
-            const rockerVector = {
-                x: rockerEnd.x - rockerFixed.x,
-                y: rockerEnd.y - rockerFixed.y
-            };
+            const rockerVector = { x: rockerEnd.x - rockerFixed.x, y: rockerEnd.y - rockerFixed.y };
+            const couplerVector = { x: crankEnd.x - rockerEnd.x, y: crankEnd.y - rockerEnd.y };
             
-            // 连杆方向向量（从摇杆端点到曲柄端点）
-            const couplerVector = {
-                x: crankEnd.x - rockerEnd.x,
-                y: crankEnd.y - rockerEnd.y
-            };
-            
-            // 计算摇杆和连杆之间的夹角
             const dotProduct = rockerVector.x * couplerVector.x + rockerVector.y * couplerVector.y;
             const rockerMagnitude = Math.sqrt(rockerVector.x * rockerVector.x + rockerVector.y * rockerVector.y);
             const couplerMagnitude = Math.sqrt(couplerVector.x * couplerVector.x + couplerVector.y * couplerVector.y);
             
-            // 防止除零错误
             if (rockerMagnitude === 0 || couplerMagnitude === 0) {
                 currentTransmissionAngle = 90;
                 currentPressureAngle = 0;
@@ -1019,20 +729,13 @@
             const clampedCos = Math.max(-1, Math.min(1, cosAngle));
             let angle = Math.acos(clampedCos) * 180 / Math.PI;
             
-            // 传动角是锐角（连杆与摇杆之间的锐角）
-            // 如果夹角大于90°，则传动角 = 180° - 夹角
-            if (angle > 90) {
-                angle = 180 - angle;
-            }
+            if (angle > 90) angle = 180 - angle;
             
             currentTransmissionAngle = angle;
-            
-            // 计算压力角（传动角的余角）
             currentPressureAngle = 90 - currentTransmissionAngle;
             if (currentPressureAngle < 0) currentPressureAngle = 0;
             if (currentPressureAngle > 90) currentPressureAngle = 90;
             
-            // 更新最小传动角记录
             if (angle < minTransmissionAngle && angle >= 0) {
                 minTransmissionAngle = angle;
                 minTransmissionAnglePosition = crankAngle;
@@ -1040,32 +743,24 @@
             }
         }
         
-        // 绘制背景
         function drawBackground() {
-            // 清除画布
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 绘制渐变背景
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, '#f8fafc');
             gradient.addColorStop(1, '#edf2f7');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // 绘制网格
             const gridSize = 40;
             ctx.strokeStyle = '#e2e8f0';
             ctx.lineWidth = 1;
             
-            // 垂直线
             for (let x = 0; x < canvas.width; x += gridSize) {
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, canvas.height);
                 ctx.stroke();
             }
-            
-            // 水平线
             for (let y = 0; y < canvas.height; y += gridSize) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
@@ -1073,20 +768,15 @@
                 ctx.stroke();
             }
             
-            // 绘制坐标轴
             ctx.strokeStyle = '#a0aec0';
             ctx.lineWidth = 2;
-            
-            // X轴
             ctx.beginPath();
             ctx.moveTo(0, canvas.height * 0.75);
             ctx.lineTo(canvas.width, canvas.height * 0.75);
             ctx.stroke();
         }
         
-        // 绘制四杆机构
         function drawMechanism(positions) {
-            // 绘制机架（固定杆）
             ctx.strokeStyle = '#2d3748';
             ctx.lineWidth = 14;
             ctx.lineCap = 'round';
@@ -1095,7 +785,6 @@
             ctx.lineTo(positions.fixed2.x, positions.fixed2.y);
             ctx.stroke();
             
-            // 绘制曲柄
             ctx.strokeStyle = '#e53e3e';
             ctx.lineWidth = 10;
             ctx.beginPath();
@@ -1103,7 +792,6 @@
             ctx.lineTo(positions.crankEnd.x, positions.crankEnd.y);
             ctx.stroke();
             
-            // 绘制连杆
             ctx.strokeStyle = '#3182ce';
             ctx.lineWidth = 8;
             ctx.beginPath();
@@ -1111,7 +799,6 @@
             ctx.lineTo(positions.rockerEnd.x, positions.rockerEnd.y);
             ctx.stroke();
             
-            // 绘制摇杆
             ctx.strokeStyle = '#38a169';
             ctx.lineWidth = 10;
             ctx.beginPath();
@@ -1119,32 +806,24 @@
             ctx.lineTo(positions.rockerEnd.x, positions.rockerEnd.y);
             ctx.stroke();
             
-            // 绘制铰链点
             const points = [positions.fixed1, positions.fixed2, positions.crankEnd, positions.rockerEnd];
             const pointColors = ['#2d3748', '#2d3748', '#e53e3e', '#38a169'];
             const pointSizes = [16, 16, 14, 14];
             
             points.forEach((point, i) => {
-                // 外圈
                 ctx.fillStyle = pointColors[i];
                 ctx.beginPath();
                 ctx.arc(point.x, point.y, pointSizes[i], 0, Math.PI * 2);
                 ctx.fill();
-                
-                // 内圈
                 ctx.fillStyle = 'white';
                 ctx.beginPath();
                 ctx.arc(point.x, point.y, pointSizes[i] - 6, 0, Math.PI * 2);
                 ctx.fill();
             });
             
-            // 绘制曲柄角度弧线
             drawCrankAngleArc(positions);
-            
-            // 绘制传动角
             drawTransmissionAngle(positions);
             
-            // 如果位置无效，显示警告
             if (!positions.isValid) {
                 ctx.fillStyle = 'rgba(229, 62, 62, 0.9)';
                 ctx.font = 'bold 16px Arial';
@@ -1153,116 +832,75 @@
             }
         }
         
-        // 绘制曲柄角度弧线
         function drawCrankAngleArc(positions) {
             const radius = 60;
-            
-            // 绘制角度弧线
             ctx.strokeStyle = '#e53e3e';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(positions.fixed1.x, positions.fixed1.y, radius, 0, crankAngle * Math.PI / 180);
             ctx.stroke();
             
-            // 标注角度值
             const midAngle = crankAngle * Math.PI / 180 / 2;
             const labelRadius = radius + 20;
             ctx.fillStyle = '#e53e3e';
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(
-                crankAngle.toFixed(0) + '°',
-                positions.fixed1.x + Math.cos(midAngle) * labelRadius,
-                positions.fixed1.y + Math.sin(midAngle) * labelRadius
-            );
+            ctx.fillText(crankAngle.toFixed(0) + '°', positions.fixed1.x + Math.cos(midAngle) * labelRadius, positions.fixed1.y + Math.sin(midAngle) * labelRadius);
         }
         
-        // 绘制传动角
         function drawTransmissionAngle(positions) {
-            // 摇杆端点
             const rockerEnd = positions.rockerEnd;
-            
-            // 计算传动角弧线
             const angleRadius = 70;
-            
-            // 计算摇杆方向
-            const rockerVector = {
-                x: positions.fixed2.x - rockerEnd.x,
-                y: positions.fixed2.y - rockerEnd.y
-            };
+            const rockerVector = { x: positions.fixed2.x - rockerEnd.x, y: positions.fixed2.y - rockerEnd.y };
             const rockerAngle = Math.atan2(rockerVector.y, rockerVector.x);
-            
-            // 计算连杆方向
-            const couplerVector = {
-                x: positions.crankEnd.x - rockerEnd.x,
-                y: positions.crankEnd.y - rockerEnd.y
-            };
+            const couplerVector = { x: positions.crankEnd.x - rockerEnd.x, y: positions.crankEnd.y - rockerEnd.y };
             const couplerAngle = Math.atan2(couplerVector.y, couplerVector.x);
-            
-            // 确定起始角度和结束角度
             const startAngle = rockerAngle;
             const endAngle = couplerAngle;
             
-            // 绘制传动角弧线
             ctx.strokeStyle = '#805ad5';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.arc(rockerEnd.x, rockerEnd.y, angleRadius * 0.7, startAngle, endAngle);
             ctx.stroke();
             
-            // 在弧线中点标注传动角值
             const midAngle = (startAngle + endAngle) / 2;
             const labelRadius = angleRadius * 0.85;
             ctx.fillStyle = '#805ad5';
             ctx.font = 'bold 14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(
-                currentTransmissionAngle.toFixed(1) + '°',
-                rockerEnd.x + Math.cos(midAngle) * labelRadius,
-                rockerEnd.y + Math.sin(midAngle) * labelRadius
-            );
+            ctx.fillText(currentTransmissionAngle.toFixed(1) + '°', rockerEnd.x + Math.cos(midAngle) * labelRadius, rockerEnd.y + Math.sin(midAngle) * labelRadius);
         }
         
-        // 绘制最小传动角位置标记
         function drawMinTransmissionAngleMarker() {
-            if (minTransmissionAngle >= 90) return; // 如果没有找到最小值，不绘制
-            
-            // 创建标记点
+            if (minTransmissionAngle >= 90) return;
             const marker = document.createElement('div');
             marker.className = 'position-marker';
             marker.id = 'minTransmissionMarker';
             
-            // 创建标签
             const label = document.createElement('div');
             label.className = 'position-label';
             label.id = 'minTransmissionLabel';
             label.textContent = `最小传动角: ${minTransmissionAngle.toFixed(1)}°`;
             
-            // 计算标记点在Canvas上的位置
             const canvasRect = canvas.getBoundingClientRect();
             const markerX = minTransmissionAnglePoint.x;
             const markerY = minTransmissionAnglePoint.y;
             
-            // 设置标记点位置
             marker.style.left = `${canvasRect.left + markerX - 7}px`;
             marker.style.top = `${canvasRect.top + markerY - 7}px`;
-            
-            // 设置标签位置
             label.style.left = `${canvasRect.left + markerX}px`;
             label.style.top = `${canvasRect.top + markerY - 45}px`;
             
-            // 如果标记已存在，先移除
             const existingMarker = document.getElementById('minTransmissionMarker');
             const existingLabel = document.getElementById('minTransmissionLabel');
             if (existingMarker) existingMarker.remove();
             if (existingLabel) existingLabel.remove();
             
-            // 添加到页面
             document.body.appendChild(marker);
             document.body.appendChild(label);
         }
         
-        // 更新显示
         function updateDisplay() {
             transmissionAngleValue.textContent = currentTransmissionAngle.toFixed(1) + '°';
             crankAngleValue.textContent = crankAngle.toFixed(0) + '°';
@@ -1271,13 +909,10 @@
             minTransmissionAngleValueEl.textContent = minTransmissionAngle.toFixed(1) + '°';
             minAnglePositionEl.textContent = minTransmissionAnglePosition.toFixed(0) + '°';
             rotationCountEl.textContent = rotationCount;
-            
-            // 计算并显示传动效率（传动角越大，效率越高）
             const transmissionEfficiency = (currentTransmissionAngle / 90 * 100).toFixed(1);
             transmissionEfficiencyEl.textContent = transmissionEfficiency + '%';
         }
         
-        // 绘制函数
         function draw() {
             drawBackground();
             const positions = calculateMechanismPositions(crankAngle);
@@ -1286,52 +921,36 @@
             drawMinTransmissionAngleMarker();
         }
         
-        // 动画循环
         function animate() {
             if (!isAnimating) return;
-            
-            // 更新曲柄角度（顺时针旋转）
-            crankAngle += speed * 2; // 速度因子
+            crankAngle += speed * 2;
             if (crankAngle >= 360) {
                 crankAngle -= 360;
                 rotationCount++;
             }
-            
-            // 检查是否完成了一圈
             if (lastAngle > 350 && crankAngle < 10) {
                 rotationCount++;
             }
             lastAngle = crankAngle;
-            
-            // 更新滑块和显示
             angleSlider.value = crankAngle;
             angleValue.textContent = crankAngle.toFixed(0) + '°';
-            
-            // 重新绘制
             draw();
-            
-            // 继续动画
             animationId = requestAnimationFrame(animate);
         }
         
-        // 事件监听器
         speedSlider.addEventListener('input', function() {
             speed = parseFloat(this.value);
-            speedValue.textContent = speed.toFixed(1) + ' rad/s';
+            // speedValue.textContent = speed.toFixed(1) + ' rad/s';
         });
         
         angleSlider.addEventListener('input', function() {
             crankAngle = parseFloat(this.value);
             angleValue.textContent = crankAngle.toFixed(0) + '°';
-            
-            // 停止动画，手动控制
             isAnimating = false;
             if (animationId) {
                 cancelAnimationFrame(animationId);
                 animationId = null;
             }
-            
-            // 重新绘制
             draw();
         });
         
@@ -1356,37 +975,31 @@
                 cancelAnimationFrame(animationId);
                 animationId = null;
             }
-            
-            // 重置角度和参数
             crankAngle = 0;
             lastAngle = 0;
             rotationCount = 0;
             minTransmissionAngle = 90;
             minTransmissionAnglePosition = 0;
-            
-            // 重置滑块和显示
             angleSlider.value = 0;
             angleValue.textContent = '0°';
             speedSlider.value = 1.0;
-            speedValue.textContent = '1.0 rad/s';
             speed = 1.0;
-            
-            // 移除最小传动角标记
             const existingMarker = document.getElementById('minTransmissionMarker');
             const existingLabel = document.getElementById('minTransmissionLabel');
             if (existingMarker) existingMarker.remove();
             if (existingLabel) existingLabel.remove();
-            
-            // 重新绘制
             draw();
         });
         
-        // 窗口大小变化时重新绘制标记
         window.addEventListener('resize', function() {
-            drawMinTransmissionAngleMarker();
+            // 简单防抖
+            if(window.resizeTimeout) clearTimeout(window.resizeTimeout);
+            window.resizeTimeout = setTimeout(() => {
+                resizeCanvas();
+                drawMinTransmissionAngleMarker();
+            }, 50);
         });
         
-        // 初始化
         window.onload = init;
     </script>
 </body>

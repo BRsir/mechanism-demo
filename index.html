@@ -2,194 +2,235 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>机械原理虚拟仿真实验平台</title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
+        :root {
+            --primary-color: #1a2980;
+            --accent-color: #26d0ce;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --bg-color: #f0f2f5;
+            --text-light: rgba(255, 255, 255, 0.9);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            display: flex;
             height: 100vh;
-            background-color: #f0f2f5;
-            overflow: hidden;
+            /* 适配移动端动态高度 */
+            height: 100dvh; 
+            background-color: var(--bg-color);
+            overflow: hidden; /* 禁止 Body 滚动 */
+            display: flex;
         }
 
-        /* --- 侧边栏样式 --- */
+        /* --- 遮罩层 (移动端专用) --- */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 99;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* --- 侧边栏 --- */
         .sidebar {
-            width: 280px; /* 默认宽度 */
-            background: linear-gradient(180deg, #1a2980 0%, #26d0ce 100%);
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--accent-color) 100%);
             color: white;
             display: flex;
             flex-direction: column;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-            z-index: 10;
-            /* 关键：添加过渡动画，让收缩更平滑 */
-            transition: all 0.3s ease;
-            white-space: nowrap; /* 防止文字在收缩时换行 */
-            overflow: hidden; /* 隐藏收缩后的内容 */
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            flex-shrink: 0;
         }
 
-        /* 隐藏状态下的侧边栏 (宽度变0) */
-        .sidebar.hidden {
+        /* PC端：收起状态 */
+        .sidebar.pc-collapsed {
             width: 0;
-            opacity: 0; /* 配合透明度变化 */
+            overflow: hidden;
         }
 
         .logo-area {
-            padding: 30px 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            min-height: 110px; /* 防止收缩时高度塌陷 */
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            white-space: nowrap;
         }
 
         .logo-area h1 {
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             letter-spacing: 1px;
         }
 
         .logo-area p {
-            font-size: 0.8rem;
-            opacity: 0.8;
+            font-size: 0.75rem;
+            opacity: 0.7;
         }
 
         .nav-menu {
             flex: 1;
-            padding: 20px 10px;
+            padding: 15px 10px;
             overflow-y: auto;
+            /* 隐藏滚动条但保留功能 */
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
         }
+        .nav-menu::-webkit-scrollbar { display: none; }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 15px 20px;
-            margin-bottom: 10px;
+            padding: 14px 18px;
+            margin-bottom: 8px;
             cursor: pointer;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            color: rgba(255,255,255,0.85);
-            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.2s;
+            color: var(--text-light);
             font-size: 0.95rem;
+            white-space: nowrap;
         }
 
         .nav-item:hover {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .nav-item.active {
             background: white;
-            color: #1a2980;
+            color: var(--primary-color);
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .nav-item i {
-            width: 30px;
+            width: 28px;
             font-size: 1.1rem;
             text-align: center;
+            margin-right: 8px;
         }
 
         .sidebar-footer {
             padding: 20px;
-            background: rgba(0,0,0,0.1);
             text-align: center;
-            min-height: 80px;
+            background: rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
         }
 
         .qr-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
+            padding: 10px;
+            border-radius: 30px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            width: 100%;
             transition: 0.3s;
         }
 
         .qr-btn:hover {
             background: white;
-            color: #1a2980;
+            color: var(--primary-color);
         }
 
-        /* --- 右侧主内容区域 --- */
+        /* --- 主内容区 --- */
         .main-content {
-            flex: 1; /* 自动占据剩余空间 */
-            position: relative;
-            background: white;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            width: 100%; /* 确保在 sidebar hidden 时填满 */
-            transition: all 0.3s ease;
+            width: 100%; /* 确保自适应 */
+            position: relative;
+            background-color: white;
         }
 
-        /* --- 顶部控制条 (新增) --- */
+        /* 顶部导航条 */
         .top-bar {
-            height: 50px;
-            background: #fff;
-            border-bottom: 1px solid #e0e0e0;
+            height: var(--header-height);
+            background: white;
+            border-bottom: 1px solid #eee;
             display: flex;
             align-items: center;
-            padding: 0 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 0 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+            z-index: 50;
         }
 
-        /* 菜单切换按钮 */
         .menu-toggle-btn {
-            background: transparent;
+            background: #f5f7fa;
             border: none;
-            font-size: 1.2rem;
-            color: #1a2980;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            color: #333;
+            font-size: 1.1rem;
             cursor: pointer;
-            padding: 8px;
-            border-radius: 5px;
-            transition: 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: 0.2s;
         }
 
         .menu-toggle-btn:hover {
-            background: #f0f2f5;
+            background: #e4e6eb;
         }
 
         .page-title {
-            margin-left: 15px;
+            margin-left: 16px;
+            font-size: 1rem;
             font-weight: 600;
             color: #333;
-            font-size: 1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        /* iframe 容器 */
+        /* Iframe 容器 - 关键适配 */
         .iframe-container {
             flex: 1;
             width: 100%;
-            overflow: hidden;
+            height: 100%; /* 填满剩余高度 */
             position: relative;
+            overflow: hidden;
+            background: #fff;
         }
 
         iframe {
             width: 100%;
             height: 100%;
             border: none;
+            display: block;
         }
 
-        /* --- 二维码弹窗 --- */
+        /* --- 二维码模态框 --- */
         .qr-modal {
             display: none;
             position: fixed;
@@ -197,90 +238,72 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 200;
             justify-content: center;
             align-items: center;
-            z-index: 100;
-            backdrop-filter: blur(5px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .qr-modal.show {
+            opacity: 1;
         }
 
         .qr-card {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
+            padding: 25px;
+            border-radius: 16px;
             text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-width: 90%;
+            width: 85%;
+            max-width: 320px;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .qr-modal.show .qr-card {
+            transform: scale(1);
         }
 
-        #qrcode {
-            margin: 20px auto;
-            display: flex;
-            justify-content: center;
-        }
-
-        .close-btn {
-            margin-top: 15px;
-            background: #f1f3f5;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            color: #495057;
-            transition: 0.2s;
-        }
-
-        .close-btn:hover {
-            background: #e9ecef;
-        }
-
-        /* --- 移动端适配 --- */
+        /* --- 移动端响应式 (断点：768px) --- */
         @media (max-width: 768px) {
+            /* 移动端侧边栏：默认隐藏在左侧屏幕外 */
             .sidebar {
-                position: absolute;
-                height: 100%;
-                left: -280px; /* 移动端默认移出屏幕 */
-                width: 280px;
-            }
-            
-            /* 移动端 sidebar 显示状态 */
-            .sidebar.mobile-show {
-                left: 0;
-            }
-
-            /* 移动端不需要 width: 0 的 hidden 状态，而是用 left 控制 */
-            .sidebar.hidden {
-                width: 280px;
-                opacity: 1;
-            }
-
-            /* 遮罩层 (仅移动端) */
-            .overlay {
-                display: none;
                 position: fixed;
                 top: 0;
                 left: 0;
-                width: 100%;
                 height: 100%;
-                background: rgba(0,0,0,0.5);
-                z-index: 5;
+                /* 适配移动端动态高度 */
+                height: 100dvh; 
+                transform: translateX(-100%);
+                box-shadow: 6px 0 20px rgba(0,0,0,0.15);
             }
-            .overlay.show {
-                display: block;
+
+            /* 移动端展开状态 */
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            /* 移动端不再使用 width: 0 的方式 */
+            .sidebar.pc-collapsed {
+                width: var(--sidebar-width);
+            }
+
+            .logo-area {
+                height: 100px;
+            }
+            
+            .nav-item {
+                padding: 16px; /* 加大触控区域 */
+                margin-bottom: 5px;
             }
         }
     </style>
 </head>
 <body>
 
-    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
     <div class="sidebar" id="sidebar">
         <div class="logo-area">
@@ -319,76 +342,77 @@
 
     <div class="main-content">
         <div class="top-bar">
-            <button class="menu-toggle-btn" onclick="toggleMenu()" title="切换菜单">
+            <button class="menu-toggle-btn" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
             <span class="page-title" id="pageTitle">四杆机构传动角</span>
         </div>
 
         <div class="iframe-container">
-            <iframe id="contentFrame" src="demo1.html"></iframe>
+            <iframe id="contentFrame" src="demo1.html" scrolling="yes"></iframe>
         </div>
     </div>
 
     <div class="qr-modal" id="qrModal" onclick="closeQRCode(event)">
         <div class="qr-card" onclick="event.stopPropagation()">
             <h3 style="color:#1a2980; margin-bottom:10px;">手机扫描体验</h3>
-            <p style="color:#666; font-size:0.9rem;">扫描下方二维码，在手机端访问</p>
-            <div id="qrcode"></div>
-            <button class="close-btn" onclick="document.getElementById('qrModal').style.display='none'">关闭</button>
+            <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">在手机浏览器访问本实验平台</p>
+            <div id="qrcode" style="display:flex; justify-content:center; margin-bottom:20px;"></div>
+            <button onclick="document.getElementById('qrModal').classList.remove('show'); setTimeout(()=>document.getElementById('qrModal').style.display='none', 300)" 
+                    style="background:#f1f3f5; border:none; padding:10px 30px; border-radius:20px; color:#555; font-weight:600; cursor:pointer;">
+                关闭
+            </button>
         </div>
     </div>
 
     <script>
-        // 切换侧边栏状态
-        function toggleMenu() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            const width = window.innerWidth;
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const iframe = document.getElementById('contentFrame');
+        const pageTitle = document.getElementById('pageTitle');
 
-            if (width <= 768) {
-                // 移动端：切换 class "mobile-show"
-                sidebar.classList.toggle('mobile-show');
-                overlay.classList.toggle('show');
+        // 切换侧边栏 (智能判断 PC 还是 Mobile)
+        function toggleSidebar() {
+            const isMobile = window.innerWidth <= 768;
+
+            if (isMobile) {
+                // 移动端：侧滑 + 遮罩
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('active');
             } else {
-                // 电脑端：切换 class "hidden"
-                sidebar.classList.toggle('hidden');
+                // PC端：挤压宽度
+                sidebar.classList.toggle('pc-collapsed');
             }
         }
 
-        // 切换演示页面
-        function loadDemo(element, fileName, title) {
-            // 1. 更新菜单激活状态
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
+        // 加载演示页面
+        function loadDemo(element, url, title) {
+            // 1. UI 状态更新
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             element.classList.add('active');
-            
-            // 2. 更新标题
-            if(title) {
-                document.getElementById('pageTitle').innerText = title;
-            }
+            pageTitle.textContent = title;
 
-            // 3. 更新 iframe
-            const iframe = document.getElementById('contentFrame');
-            iframe.style.opacity = 0;
+            // 2. Iframe 切换动画
+            iframe.style.opacity = '0';
             setTimeout(() => {
-                iframe.src = fileName;
+                iframe.src = url;
                 iframe.onload = () => {
-                    iframe.style.opacity = 1;
+                    iframe.style.opacity = '1';
                 };
             }, 200);
 
-            // 4. 如果是移动端，点击菜单后自动收起
+            // 3. 移动端自动收起菜单
             if (window.innerWidth <= 768) {
-                toggleMenu();
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
             }
         }
 
-        // 显示二维码
+        // 二维码逻辑
         function showQRCode() {
             const modal = document.getElementById('qrModal');
             const container = document.getElementById('qrcode');
+            
             container.innerHTML = "";
             new QRCode(container, {
                 text: window.location.href,
@@ -398,28 +422,34 @@
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
+            
             modal.style.display = 'flex';
+            // 稍微延迟添加 show 类以触发 CSS 动画
+            setTimeout(() => modal.classList.add('show'), 10);
         }
 
         function closeQRCode(e) {
             if (e.target.id === 'qrModal') {
-                e.target.style.display = 'none';
+                const modal = document.getElementById('qrModal');
+                modal.classList.remove('show');
+                setTimeout(() => modal.style.display = 'none', 300);
             }
         }
-        
-        // 窗口大小改变时重置状态
+
+        // 监听窗口大小变化，自动修复布局状态
         window.addEventListener('resize', () => {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            // 如果窗口变大，移除移动端的遮罩和样式，防止混乱
             if (window.innerWidth > 768) {
-                sidebar.classList.remove('mobile-show');
-                overlay.classList.remove('show');
+                // 如果从手机变回PC，移除移动端的残留样式
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+            } else {
+                // 如果从PC变回手机，移除PC的折叠状态
+                sidebar.classList.remove('pc-collapsed');
             }
         });
 
-        // 初始化
-        document.getElementById('contentFrame').style.transition = 'opacity 0.3s ease';
+        // 初始化过渡效果
+        iframe.style.transition = 'opacity 0.3s ease';
     </script>
 </body>
 </html>
