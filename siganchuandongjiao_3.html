@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>四杆机构传动角动态演示</title>
+    <script src="https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3182ce;
+            --bg-color: #f0f4f8;
+            --panel-bg: white;
+            --text-main: #2d3748;
+            --text-sub: #718096;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            color: var(--text-main);
+            /* PC端默认固定高度，防止双重滚动条 */
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-container {
+            width: 100%;
+            height: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+            overflow-y: auto; /* 允许内容过多时内部滚动 */
+        }
+        
+        /* --- 顶部 Header --- */
+        header {
+            background: var(--panel-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            border-bottom: 4px solid var(--primary-color);
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            background: #f7fafc;
+            padding: 6px 16px;
+            border-radius: 20px;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+        
+        /* --- 中间主内容区 (左右布局) --- */
+        .main-content {
+            display: flex;
+            gap: 15px;
+            /* PC端让中间区域占据剩余空间，但不强制撑满导致无法显示底部 */
+            flex: 1; 
+            min-height: 0; 
+        }
+        
+        /* 左侧：仿真视图容器 */
+        .simulation-container {
+            flex: 2; /* 占据更多空间 */
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+        
+        .simulation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #edf2f7;
+        }
+        
+        .simulation-title {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .value-display {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            background: var(--primary-color);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        
+        /* Canvas 区域 */
+        .canvas-wrapper {
+            flex: 1; 
+            min-height: 400px; /* 保证PC端有足够高度 */
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 浮动提示框 */
+        .canvas-overlay, .instruction {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 5;
+            max-width: 260px;
+            pointer-events: none;
+        }
+        .canvas-overlay { top: 15px; left: 15px; }
+        .instruction { bottom: 15px; right: 15px; }
+
+        .overlay-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #2d3748; }
+        .overlay-info { font-size: 0.85rem; line-height: 1.5; color: #4a5568; }
+        
+        /* 图例 */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #edf2f7;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f7fafc;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: 1px solid #e2e8f0;
+        }
+        .legend-color { width: 14px; height: 14px; border-radius: 3px; }
+
+        /* 右侧：控制面板 */
+        .control-container {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            overflow-y: auto;
+            min-width: 320px;
+        }
+
+        .control-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .control-group { margin-bottom: 20px; }
+        .control-label {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            color: #4a5568;
+        }
+
+        /* 滑块 */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* 按钮 */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 0;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        .start-btn { background: linear-gradient(135deg, #38a169, #2f855a); }
+        .pause-btn { background: linear-gradient(135deg, #e53e3e, #c53030); }
+        .reset-btn { background: linear-gradient(135deg, #3182ce, #2c5282); }
+
+        /* 数据网格 */
+        .data-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .data-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .data-label { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px; }
+        .data-value { font-size: 1.4rem; font-weight: 700; color: var(--text-main); }
+        .highlight { color: #e53e3e; }
+
+        /* 信息框 */
+        .min-angle-box, .rotation-box, .qr-box {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .min-angle-title, .rotation-title, .qr-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2c5282;
+        }
+        .min-angle-data {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+        
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        /* --- 底部说明区 (保留) --- */
+        .info-panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .info-title {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+        .info-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #2d3748; }
+        .info-card p { font-size: 0.95rem; color: #4a5568; line-height: 1.6; }
+
+        /* --- 标记点 (原样保留) --- */
+        .position-marker {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e53e3e;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px #e53e3e;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .position-label {
+            position: absolute;
+            background: #e53e3e;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            z-index: 10;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* --- 响应式适配核心 (断点：900px) --- */
+        @media (max-width: 900px) {
+            body { 
+                height: auto; 
+                min-height: 100vh; 
+                overflow-y: auto; /* 手机端允许整页滚动 */
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .app-container { 
+                padding: 10px; 
+                gap: 10px;
+                overflow: visible; /* 让内容撑开高度 */
+            }
+            
+            .main-content {
+                flex-direction: column; /* 改为垂直堆叠 */
+                gap: 10px;
+            }
+
+            /* 仿真区高度自适应 */
+            .simulation-container {
+                height: auto;
+                min-height: auto;
+            }
+
+            .canvas-wrapper {
+                min-height: 60vw; /* 宽度变窄时，保持适当的高度比例 */
+                max-height: 400px;
+            }
+
+            /* 控制面板全宽 */
+            .control-container {
+                min-width: 100%;
+                overflow: visible;
+            }
+
+            h1 { font-size: 1.2rem; }
+            .subtitle { font-size: 0.8rem; padding: 4px 10px; }
+            
+            /* 调整浮动提示位置，避免遮挡 */
+            .canvas-overlay { top: 5px; left: 5px; padding: 8px; max-width: 180px; }
+            .overlay-title { font-size: 0.85rem; }
+            .overlay-info { font-size: 0.75rem; }
+            .instruction { display: none; } /* 手机屏幕小，隐藏非必要提示 */
+            
+            /* 数据面板变更为 4 列，利用横向空间 */
+            .data-panel { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+            .data-box { padding: 8px 4px; }
+            .data-value { font-size: 1.1rem; }
+            .data-label { font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            
+            /* 说明区域调整 */
+            .info-content { grid-template-columns: 1fr; }
+            
+            /* 隐藏二维码（手机上看无需扫码） */
+            .qr-box { display: none; }
+        }
+
+        /* 超小屏幕适配 */
+        @media (max-width: 480px) {
+            .data-panel { grid-template-columns: repeat(2, 1fr); }
+            .button-group { gap: 6px; }
+            button { font-size: 0.85rem; padding: 10px 0; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1><i class="fas fa-project-diagram"></i> 四杆机构传动角动态演示系统</h1>
+            <p class="subtitle"><i class="fas fa-ruler-combined"></i> 机架: 100mm | 曲柄: 60mm | 摇杆: 90mm | 连杆: 80mm</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="simulation-container">
+                <div class="simulation-header">
+                    <h2 class="simulation-title"><i class="fas fa-cogs"></i> 机构运动仿真视图</h2>
+                    <div class="value-display" id="currentAngleDisplay">曲柄: 0°</div>
+                </div>
+                
+                <div class="canvas-wrapper">
+                    <canvas id="mechanismCanvas" width="1200" height="600"></canvas>
+                    
+                    <div class="canvas-overlay">
+                        <div class="overlay-title"><i class="fas fa-info-circle"></i> 传动角定义</div>
+                        <div class="overlay-info">
+                            传动角是连杆与摇杆之间所夹的锐角。传动角越大，传力性能越好。
+                        </div>
+                    </div>
+                    
+                    <div class="instruction">
+                        <div class="overlay-title"><i class="fas fa-mouse-pointer"></i> 操作提示</div>
+                        <div class="overlay-info">
+                            拖动滑块或点击按钮控制运动。
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-color" style="background-color: #2d3748;"></div>机架</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #e53e3e;"></div>曲柄</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #3182ce;"></div>连杆</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #38a169;"></div>摇杆</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #805ad5;"></div>传动角</div>
+                </div>
+            </div>
+            
+            <div class="control-container">
+                <h2 class="control-title"><i class="fas fa-sliders-h"></i> 控制面板</h2>
+                
+                <div class="control-group">
+                    <label class="control-label"><i class="fas fa-tachometer-alt"></i> 曲柄转速控制</label>
+                    <div class="slider-container">
+                        <i class="fas fa-minus slider-icon" style="color:#718096"></i>
+                        <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+                        <i class="fas fa-plus slider-icon" style="color:#718096"></i>
+                        <span id="speedValue" style="display:none">1.0</span> </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label"><i class="fas fa-circle"></i> 曲柄角度 (<span id="angleValue">0°</span>)</label>
+                    <div class="slider-container">
+                        <input type="range" id="angleSlider" min="0" max="360" step="1" value="0">
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="startBtn" class="start-btn"><i class="fas fa-play"></i> 开始</button>
+                    <button id="pauseBtn" class="pause-btn"><i class="fas fa-pause"></i> 暂停</button>
+                    <button id="resetBtn" class="reset-btn"><i class="fas fa-redo"></i> 重置</button>
+                </div>
+                
+                <div class="data-panel">
+                    <div class="data-box">
+                        <div class="data-label">当前传动角</div>
+                        <div class="data-value" id="transmissionAngleValue">90.0°</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="data-label">曲柄角度</div>
+                        <div class="data-value" id="crankAngleValue">0°</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="data-label">最小传动角</div>
+                        <div class="data-value highlight" id="minTransmissionAngle">90.0°</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="data-label">传动效率</div>
+                        <div class="data-value" id="transmissionEfficiency">100%</div>
+                    </div>
+                </div>
+                
+                <div class="min-angle-box">
+                    <div class="min-angle-title">
+                        <i class="fas fa-angle-double-down"></i> 最小传动角位置
+                    </div>
+                    <div class="min-angle-data">
+                        <span>最小传动角：</span>
+                        <span id="minTransmissionAngleValue">90.0°</span>
+                    </div>
+                    <div class="min-angle-data">
+                        <span>对应曲柄角度：</span>
+                        <span id="minAnglePosition">0°</span>
+                    </div>
+                </div>
+                
+                <div class="rotation-box">
+                    <div class="rotation-title">
+                        <i class="fas fa-redo-alt"></i> 运行数据
+                    </div>
+                    <div class="min-angle-data">
+                        <span>转动圈数：</span>
+                        <span id="rotationCount" style="font-weight:bold; color:#2c7a7b">0</span>
+                    </div>
+                </div>
+
+                <div class="qr-box">
+                    <div class="qr-title">
+                        <i class="fas fa-mobile-alt"></i> 手机扫码演示
+                    </div>
+                    <div id="qrcode"></div>
+                    <p class="qr-tip" style="font-size:0.8rem; color:#718096; margin-top:5px;">扫描二维码在手机打开</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <h2 class="info-title"><i class="fas fa-info-circle"></i> 机械原理说明</h2>
+            <div class="info-content">
+                <div class="info-card">
+                    <h3><i class="fas fa-project-diagram"></i> 四杆机构</h3>
+                    <p>四杆机构是由四个刚性构件通过转动副连接而成的平面连杆机构。本演示中，机架固定在地面，曲柄作为输入杆绕固定点顺时针旋转，摇杆作为输出杆绕另一固定点摆动，连杆连接曲柄和摇杆。</p>
+                </div>
+                <div class="info-card">
+                    <h3><i class="fas fa-angle-right"></i> 传动角</h3>
+                    <p>传动角是连杆与摇杆之间所夹的锐角。传动角越大，传力性能越好，机构效率越高。当传动角为90°时，传力性能最佳；当传动角为0°时，机构处于死点位置，无法传力。传动角与压力角互为余角。</p>
+                </div>
+                <div class="info-card">
+                    <h3><i class="fas fa-bullseye"></i> 最小传动角位置</h3>
+                    <p>在四杆机构运动过程中，传动角会不断变化。本程序实时计算传动角的最小值，并在图中用红色标记点标出该位置。最小传动角位置是机构传动性能最差的位置，设计时应避免机构在此位置附近工作。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取Canvas和上下文
+        const canvas = document.getElementById('mechanismCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 调整Canvas尺寸以适应容器
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            draw(); // 重绘
+        }
+        
+        // 四杆机构参数（单位：mm）
+        const frameLength = 100;   // 机架
+        const crankLength = 60;    // 曲柄
+        const rockerLength = 90;   // 摇杆
+        const couplerLength = 80;  // 连杆
+        
+        // 机构位置和状态
+        let crankAngle = 0; // 曲柄角度（度），0°表示曲柄水平向右
+        let isAnimating = false;
+        let animationId = null;
+        let speed = 1.0; // 角速度因子
+        let rotationCount = 0; // 曲柄转动圈数
+        let lastAngle = 0; // 上一帧的角度，用于计算圈数
+        
+        // 传动角相关
+        let currentTransmissionAngle = 90; // 传动角（初始化为最大值）
+        let currentPressureAngle = 0; // 压力角
+        let minTransmissionAngle = 90; // 最小传动角（初始化为最大值）
+        let minTransmissionAnglePosition = 0; // 最小传动角对应的曲柄角度
+        let minTransmissionAnglePoint = { x: 0, y: 0 }; // 最小传动角时的摇杆端点位置
+        
+        // 获取DOM元素
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue'); // 虽在HTML隐藏，但JS逻辑保留防报错
+        const angleSlider = document.getElementById('angleSlider');
+        const angleValue = document.getElementById('angleValue');
+        const transmissionAngleValue = document.getElementById('transmissionAngleValue');
+        const crankAngleValue = document.getElementById('crankAngleValue');
+        const minTransmissionAngleEl = document.getElementById('minTransmissionAngle');
+        const minTransmissionAngleValueEl = document.getElementById('minTransmissionAngleValue');
+        const minAnglePositionEl = document.getElementById('minAnglePosition');
+        const rotationCountEl = document.getElementById('rotationCount');
+        const transmissionEfficiencyEl = document.getElementById('transmissionEfficiency');
+        const currentAngleDisplay = document.getElementById('currentAngleDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // 初始化
+        function init() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 初始绘制
+            draw();
+            
+            // 更新显示
+            updateDisplay();
+
+            // 生成二维码
+            generateQRCode();
+        }
+
+        // 生成二维码函数
+        function generateQRCode() {
+            const container = document.getElementById("qrcode");
+            if(!container) return;
+            container.innerHTML = "";
+            const currentUrl = window.location.href;
+            new QRCode(container, {
+                text: currentUrl,
+                width: 128,
+                height: 128,
+                colorDark : "#2d3748",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+        
+        // 计算四杆机构各点位置
+        function calculateMechanismPositions(angleDeg) {
+            const angle = angleDeg * Math.PI / 180;
+            // 优化：在移动端保持合适的缩放比例
+            const scale = Math.min(canvas.width, canvas.height) / 250;
+            
+            const frameX = canvas.width / 2;
+            const frameY = canvas.height * 0.75;
+            const fixedPoint1 = { x: frameX - (frameLength/2) * scale, y: frameY };
+            const fixedPoint2 = { x: frameX + (frameLength/2) * scale, y: frameY };
+            
+            const crankEnd = {
+                x: fixedPoint1.x + crankLength * scale * Math.cos(angle),
+                y: fixedPoint1.y + crankLength * scale * Math.sin(angle)
+            };
+            
+            const dx = crankEnd.x - fixedPoint2.x;
+            const dy = crankEnd.y - fixedPoint2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > couplerLength * scale + rockerLength * scale || 
+                distance < Math.abs(couplerLength * scale - rockerLength * scale)) {
+                
+                const angleToCrank = Math.atan2(dy, dx);
+                const rockerEnd = {
+                    x: fixedPoint2.x + rockerLength * scale * Math.cos(angleToCrank),
+                    y: fixedPoint2.y + rockerLength * scale * Math.sin(angleToCrank)
+                };
+                calculateTransmissionAngle(crankEnd, rockerEnd, fixedPoint2);
+                
+                return {
+                    fixed1: fixedPoint1,
+                    fixed2: fixedPoint2,
+                    crankEnd: crankEnd,
+                    rockerEnd: rockerEnd,
+                    scale: scale,
+                    isValid: false
+                };
+            }
+            
+            const cosRockerAngle = (rockerLength * rockerLength * scale * scale + distance * distance - couplerLength * couplerLength * scale * scale) / 
+                                   (2 * rockerLength * scale * distance);
+            const cosClamped = Math.max(-1, Math.min(1, cosRockerAngle));
+            const baseAngle = Math.atan2(dy, dx);
+            const rockerAngle = baseAngle + Math.acos(cosClamped);
+            
+            const rockerEnd = {
+                x: fixedPoint2.x + rockerLength * scale * Math.cos(rockerAngle),
+                y: fixedPoint2.y + rockerLength * scale * Math.sin(rockerAngle)
+            };
+            
+            calculateTransmissionAngle(crankEnd, rockerEnd, fixedPoint2);
+            
+            return {
+                fixed1: fixedPoint1,
+                fixed2: fixedPoint2,
+                crankEnd: crankEnd,
+                rockerEnd: rockerEnd,
+                scale: scale,
+                isValid: true
+            };
+        }
+        
+        function calculateTransmissionAngle(crankEnd, rockerEnd, rockerFixed) {
+            const rockerVector = { x: rockerEnd.x - rockerFixed.x, y: rockerEnd.y - rockerFixed.y };
+            const couplerVector = { x: crankEnd.x - rockerEnd.x, y: crankEnd.y - rockerEnd.y };
+            
+            const dotProduct = rockerVector.x * couplerVector.x + rockerVector.y * couplerVector.y;
+            const rockerMagnitude = Math.sqrt(rockerVector.x * rockerVector.x + rockerVector.y * rockerVector.y);
+            const couplerMagnitude = Math.sqrt(couplerVector.x * couplerVector.x + couplerVector.y * couplerVector.y);
+            
+            if (rockerMagnitude === 0 || couplerMagnitude === 0) {
+                currentTransmissionAngle = 90;
+                currentPressureAngle = 0;
+                return;
+            }
+            
+            const cosAngle = dotProduct / (rockerMagnitude * couplerMagnitude);
+            const clampedCos = Math.max(-1, Math.min(1, cosAngle));
+            let angle = Math.acos(clampedCos) * 180 / Math.PI;
+            
+            if (angle > 90) angle = 180 - angle;
+            
+            currentTransmissionAngle = angle;
+            currentPressureAngle = 90 - currentTransmissionAngle;
+            if (currentPressureAngle < 0) currentPressureAngle = 0;
+            if (currentPressureAngle > 90) currentPressureAngle = 90;
+            
+            if (angle < minTransmissionAngle && angle >= 0) {
+                minTransmissionAngle = angle;
+                minTransmissionAnglePosition = crankAngle;
+                minTransmissionAnglePoint = { ...rockerEnd };
+            }
+        }
+        
+        function drawBackground() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#f8fafc');
+            gradient.addColorStop(1, '#edf2f7');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const gridSize = 40;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            ctx.strokeStyle = '#a0aec0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height * 0.75);
+            ctx.lineTo(canvas.width, canvas.height * 0.75);
+            ctx.stroke();
+        }
+        
+        function drawMechanism(positions) {
+            ctx.strokeStyle = '#2d3748';
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(positions.fixed1.x, positions.fixed1.y);
+            ctx.lineTo(positions.fixed2.x, positions.fixed2.y);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#e53e3e';
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.moveTo(positions.fixed1.x, positions.fixed1.y);
+            ctx.lineTo(positions.crankEnd.x, positions.crankEnd.y);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#3182ce';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(positions.crankEnd.x, positions.crankEnd.y);
+            ctx.lineTo(positions.rockerEnd.x, positions.rockerEnd.y);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#38a169';
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.moveTo(positions.fixed2.x, positions.fixed2.y);
+            ctx.lineTo(positions.rockerEnd.x, positions.rockerEnd.y);
+            ctx.stroke();
+            
+            const points = [positions.fixed1, positions.fixed2, positions.crankEnd, positions.rockerEnd];
+            const pointColors = ['#2d3748', '#2d3748', '#e53e3e', '#38a169'];
+            const pointSizes = [16, 16, 14, 14];
+            
+            points.forEach((point, i) => {
+                ctx.fillStyle = pointColors[i];
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, pointSizes[i], 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, pointSizes[i] - 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            drawCrankAngleArc(positions);
+            drawTransmissionAngle(positions);
+            
+            if (!positions.isValid) {
+                ctx.fillStyle = 'rgba(229, 62, 62, 0.9)';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('机构无法到达此位置', canvas.width / 2, 50);
+            }
+        }
+        
+        function drawCrankAngleArc(positions) {
+            const radius = 60;
+            ctx.strokeStyle = '#e53e3e';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(positions.fixed1.x, positions.fixed1.y, radius, 0, crankAngle * Math.PI / 180);
+            ctx.stroke();
+            
+            const midAngle = crankAngle * Math.PI / 180 / 2;
+            const labelRadius = radius + 20;
+            ctx.fillStyle = '#e53e3e';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(crankAngle.toFixed(0) + '°', positions.fixed1.x + Math.cos(midAngle) * labelRadius, positions.fixed1.y + Math.sin(midAngle) * labelRadius);
+        }
+        
+        function drawTransmissionAngle(positions) {
+            const rockerEnd = positions.rockerEnd;
+            const angleRadius = 70;
+            const rockerVector = { x: positions.fixed2.x - rockerEnd.x, y: positions.fixed2.y - rockerEnd.y };
+            const rockerAngle = Math.atan2(rockerVector.y, rockerVector.x);
+            const couplerVector = { x: positions.crankEnd.x - rockerEnd.x, y: positions.crankEnd.y - rockerEnd.y };
+            const couplerAngle = Math.atan2(couplerVector.y, couplerVector.x);
+            const startAngle = rockerAngle;
+            const endAngle = couplerAngle;
+            
+            ctx.strokeStyle = '#805ad5';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(rockerEnd.x, rockerEnd.y, angleRadius * 0.7, startAngle, endAngle);
+            ctx.stroke();
+            
+            const midAngle = (startAngle + endAngle) / 2;
+            const labelRadius = angleRadius * 0.85;
+            ctx.fillStyle = '#805ad5';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(currentTransmissionAngle.toFixed(1) + '°', rockerEnd.x + Math.cos(midAngle) * labelRadius, rockerEnd.y + Math.sin(midAngle) * labelRadius);
+        }
+        
+        function drawMinTransmissionAngleMarker() {
+            if (minTransmissionAngle >= 90) return;
+            const marker = document.createElement('div');
+            marker.className = 'position-marker';
+            marker.id = 'minTransmissionMarker';
+            
+            const label = document.createElement('div');
+            label.className = 'position-label';
+            label.id = 'minTransmissionLabel';
+            label.textContent = `最小传动角: ${minTransmissionAngle.toFixed(1)}°`;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const markerX = minTransmissionAnglePoint.x;
+            const markerY = minTransmissionAnglePoint.y;
+            
+            marker.style.left = `${canvasRect.left + markerX - 7}px`;
+            marker.style.top = `${canvasRect.top + markerY - 7}px`;
+            label.style.left = `${canvasRect.left + markerX}px`;
+            label.style.top = `${canvasRect.top + markerY - 45}px`;
+            
+            const existingMarker = document.getElementById('minTransmissionMarker');
+            const existingLabel = document.getElementById('minTransmissionLabel');
+            if (existingMarker) existingMarker.remove();
+            if (existingLabel) existingLabel.remove();
+            
+            document.body.appendChild(marker);
+            document.body.appendChild(label);
+        }
+        
+        function updateDisplay() {
+            transmissionAngleValue.textContent = currentTransmissionAngle.toFixed(1) + '°';
+            crankAngleValue.textContent = crankAngle.toFixed(0) + '°';
+            currentAngleDisplay.textContent = '曲柄: ' + crankAngle.toFixed(0) + '°';
+            minTransmissionAngleEl.textContent = minTransmissionAngle.toFixed(1) + '°';
+            minTransmissionAngleValueEl.textContent = minTransmissionAngle.toFixed(1) + '°';
+            minAnglePositionEl.textContent = minTransmissionAnglePosition.toFixed(0) + '°';
+            rotationCountEl.textContent = rotationCount;
+            const transmissionEfficiency = (currentTransmissionAngle / 90 * 100).toFixed(1);
+            transmissionEfficiencyEl.textContent = transmissionEfficiency + '%';
+        }
+        
+        function draw() {
+            drawBackground();
+            const positions = calculateMechanismPositions(crankAngle);
+            drawMechanism(positions);
+            updateDisplay();
+            drawMinTransmissionAngleMarker();
+        }
+        
+        function animate() {
+            if (!isAnimating) return;
+            crankAngle += speed * 2;
+            if (crankAngle >= 360) {
+                crankAngle -= 360;
+                rotationCount++;
+            }
+            if (lastAngle > 350 && crankAngle < 10) {
+                rotationCount++;
+            }
+            lastAngle = crankAngle;
+            angleSlider.value = crankAngle;
+            angleValue.textContent = crankAngle.toFixed(0) + '°';
+            draw();
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        speedSlider.addEventListener('input', function() {
+            speed = parseFloat(this.value);
+            // speedValue.textContent = speed.toFixed(1) + ' rad/s';
+        });
+        
+        angleSlider.addEventListener('input', function() {
+            crankAngle = parseFloat(this.value);
+            angleValue.textContent = crankAngle.toFixed(0) + '°';
+            isAnimating = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            draw();
+        });
+        
+        startBtn.addEventListener('click', function() {
+            if (!isAnimating) {
+                isAnimating = true;
+                animate();
+            }
+        });
+        
+        pauseBtn.addEventListener('click', function() {
+            isAnimating = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        });
+        
+        resetBtn.addEventListener('click', function() {
+            isAnimating = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            crankAngle = 0;
+            lastAngle = 0;
+            rotationCount = 0;
+            minTransmissionAngle = 90;
+            minTransmissionAnglePosition = 0;
+            angleSlider.value = 0;
+            angleValue.textContent = '0°';
+            speedSlider.value = 1.0;
+            speed = 1.0;
+            const existingMarker = document.getElementById('minTransmissionMarker');
+            const existingLabel = document.getElementById('minTransmissionLabel');
+            if (existingMarker) existingMarker.remove();
+            if (existingLabel) existingLabel.remove();
+            draw();
+        });
+        
+        window.addEventListener('resize', function() {
+            // 简单防抖
+            if(window.resizeTimeout) clearTimeout(window.resizeTimeout);
+            window.resizeTimeout = setTimeout(() => {
+                resizeCanvas();
+                drawMinTransmissionAngleMarker();
+            }, 50);
+        });
+        
+        window.onload = init;
+    </script>
+</body>
+</html>

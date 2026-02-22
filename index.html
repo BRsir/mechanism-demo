@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>机械原理虚拟仿真实验平台</title>
+    <title>机械原理AI仿真平台</title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
@@ -307,30 +307,46 @@
 
     <div class="sidebar" id="sidebar">
         <div class="logo-area">
-            <h1><i class="fas fa-flask"></i> 机械原理仿真</h1>
+            <h1><i class="fas fa-flask"></i>机械原理AI仿真平台</h1>
             <p>Mechanics Simulation Lab</p>
         </div>
 
         <div class="nav-menu">
-            <div class="nav-item active" onclick="loadDemo(this, 'demo1.html', '四杆机构传动角')">
+            <div class="nav-item active" onclick="loadDemo(this, 'qubingchonghedian_1.html', '曲柄摇块速度/加速度分析')">
                 <i class="fas fa-project-diagram"></i>
+                <span>曲柄摇块速度/加速度分析</span>
+            </div>
+            
+            <div class="nav-item" onclick="loadDemo(this, 'siganleixing_2.html', '四杆机构类型分析')">
+                <i class="fas fa-cogs"></i>
+                <span>四杆机构类型分析</span>
+            </div>
+            
+            <div class="nav-item" onclick="loadDemo(this, 'siganchuandongjiao_3.html', '四杆机构传动角')">
+                <i class="fas fa-bezier-curve"></i>
                 <span>四杆机构传动角</span>
             </div>
             
-            <div class="nav-item" onclick="loadDemo(this, 'demo2.html', '四杆机构类型判断')">
-                <i class="fas fa-cogs"></i>
-                <span>四杆机构类型判断</span>
-            </div>
-            
-            <div class="nav-item" onclick="loadDemo(this, 'demo3.html', '滚子凸轮轮廓设计')">
-                <i class="fas fa-bezier-curve"></i>
-                <span>滚子凸轮轮廓设计</span>
-            </div>
-            
-            <div class="nav-item" onclick="loadDemo(this, 'demo4.html', '滚子凸轮压力角')">
+            <div class="nav-item" onclick="loadDemo(this, 'tulunyalijiao_4.html', '滚子凸轮压力角')">
                 <i class="fas fa-chart-line"></i>
                 <span>滚子凸轮压力角</span>
             </div>
+			
+			<div class="nav-item" onclick="loadDemo(this, 'gunzilunkuo_5.html', '滚子凸轮轮廓')">
+			    <i class="fas fa-chart-line"></i>
+			    <span>滚子凸轮轮廓</span>
+			</div>
+			
+			<div class="nav-item" onclick="loadDemo(this, 'pingdilunkuo_6.html', '平底推杆凸轮轮廓')">
+			    <i class="fas fa-chart-line"></i>
+			    <span>滚平底推杆凸轮轮廓</span>
+			</div>
+			
+			<div class="nav-item" onclick="loadDemo(this, 'chilunniehejiao_7.html', '齿轮啮合角')">
+			    <i class="fas fa-chart-line"></i>
+			    <span>齿轮啮合角</span>
+			</div>
+			
         </div>
 
         <div class="sidebar-footer">
@@ -349,7 +365,7 @@
         </div>
 
         <div class="iframe-container">
-            <iframe id="contentFrame" src="demo1.html" scrolling="yes"></iframe>
+            <iframe id="contentFrame" src="qubingchonghedian_1.html" scrolling="yes"></iframe>
         </div>
     </div>
 

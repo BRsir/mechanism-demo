@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>四杆机构类型教学演示</title>
+    <style>
+        :root {
+            --primary-color: #1a2980;
+            --accent-color: #26d0ce;
+            --bg-color: #f0f4f8;
+            --panel-bg: white;
+            --text-main: #2d3748;
+            --text-sub: #718096;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* 允许滚动 */
+        }
+        
+        .app-container {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        /* --- 顶部 Header --- */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            background: linear-gradient(90deg, #1a2980, #26d0ce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            font-weight: 500;
+        }
+        
+        /* --- 主内容区 --- */
+        .main-content {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        /* 左侧：仿真视图 */
+        .simulation-section {
+            flex: 2;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0; /* 防止溢出 */
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(38, 208, 206, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+        
+        .canvas-and-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: #f8f9fa;
+            position: relative;
+            min-height: 400px; /* PC端最小高度 */
+            overflow: hidden;
+        }
+        
+        #mechanismCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 运动控制按钮条 */
+        .motion-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            align-items: center;
+        }
+        
+        .motion-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+            min-width: 100px;
+        }
+        .motion-btn:active { opacity: 0.8; }
+        
+        .speed-control {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 120px;
+        }
+        
+        .speed-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+        
+        .speed-slider { width: 100%; }
+        
+        /* 图例 */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+        
+        /* 右侧：控制与参数 */
+        .control-section {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 320px;
+        }
+        
+        .control-panel h3 {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 尺寸显示网格 */
+        .dimensions-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .dimension-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .dimension-item.active {
+            background: #e6fffa;
+            border-color: #26d0ce;
+            color: #234e52;
+        }
+        
+        .dimension-label { font-size: 0.8rem; color: var(--text-sub); }
+        .dimension-value { font-size: 1.1rem; font-weight: bold; color: var(--primary-color); }
+        
+        /* 输入控件 */
+        .input-group { margin-bottom: 20px; }
+        .input-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* 播放控制按钮 */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .control-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .control-btn:disabled { opacity: 0.5; }
+        #pauseBtn { background: #e67e22; }
+        #resetBtn { background: #e53e3e; }
+        
+        /* 角度显示 */
+        .angle-display {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .angle-item { text-align: center; flex: 1; }
+        .angle-label { font-size: 0.8rem; color: var(--text-sub); }
+        .angle-value { font-size: 1.1rem; font-weight: bold; color: var(--primary-color); }
+        
+        /* 机构类型指示器 */
+        .mechanism-type-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .type-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .type-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            opacity: 0.6;
+            transition: all 0.3s;
+        }
+        .type-indicator.active {
+            border-color: var(--accent-color);
+            background: #e6fffa;
+            opacity: 1;
+            box-shadow: 0 2px 8px rgba(38, 208, 206, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .type-name { font-weight: 700; font-size: 1.1rem; }
+        .crank-rocker { color: #3498db; }
+        .double-crank { color: #2ecc71; }
+        .double-rocker { color: #e74c3c; }
+        
+        .type-description {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            border-left: 3px solid var(--accent-color);
+            margin-top: 10px;
+        }
+        
+        /* --- 底部说明区 --- */
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .info-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .info-card p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        
+        .formula {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+            color: #e74c3c;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+        
+        .condition-list { padding-left: 0; list-style: none; font-size: 0.9rem; }
+        .condition-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 浮动信息 (原absolute改为static或适应性布局) */
+        .trace-info, .cycle-info, .animation-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            margin-right: 10px;
+        }
+        .trace-info { background: #2d3748; color: white; }
+        .cycle-info { background: white; border: 1px solid #e2e8f0; color: var(--primary-color); }
+        .animation-status { background: white; border: 1px solid #e2e8f0; color: var(--text-main); }
+        
+        .trace-dot, .status-indicator {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+        }
+        .status-active { background: #2ecc71; }
+        .status-inactive { background: #e74c3c; }
+        .trace-dot { background: #9b59b6; }
+
+        .overlay-status-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            pointer-events: none;
+        }
+
+        /* --- 响应式适配 (断点：900px) --- */
+        @media (max-width: 900px) {
+            .app-container { padding: 10px; gap: 10px; }
+            header { padding: 12px; }
+            h1 { font-size: 1.2rem; }
+            .subtitle { font-size: 0.8rem; }
+            
+            .main-content { flex-direction: column; }
+            
+            .canvas-container { min-height: 60vw; max-height: 400px; }
+            
+            /* 移动端控制面板 */
+            .control-section { min-width: 100%; gap: 15px; }
+            
+            /* 按钮和滑块增大触控区 */
+            .motion-btn, .control-btn { padding: 12px; font-size: 0.95rem; }
+            input[type="range"] { height: 12px; }
+            input[type="range"]::-webkit-slider-thumb { width: 28px; height: 28px; }
+            
+            /* 类型指示器变紧凑 */
+            .type-indicator { padding: 10px; margin-bottom: 8px; }
+            .type-name { font-size: 1rem; }
+            .type-icon { font-size: 1.5rem; }
+            
+            /* 底部说明调整 */
+            .info-grid { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 480px) {
+            .dimensions-display { grid-template-columns: 1fr 1fr; font-size: 0.8rem; }
+            .button-group { gap: 8px; }
+            .legend-item { font-size: 0.7rem; padding: 4px 8px; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1><i class="fas fa-cogs"></i> 四杆机构类型教学演示系统</h1>
+            <p class="subtitle">调整BC杆长度，探索机构类型变化</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="simulation-section">
+                <div class="section-title"><i class="fas fa-tv"></i> 机构运动仿真</div>
+                
+                <div class="canvas-and-controls">
+                    <div class="canvas-container">
+                        <canvas id="mechanismCanvas" width="800" height="600"></canvas>
+                        <div class="overlay-status-container">
+                            <div class="animation-status">
+                                <span class="status-indicator status-inactive" id="statusDot"></span>
+                                <span id="statusText">已停止</span>
+                            </div>
+                            <div class="trace-info" id="traceInfo" style="display:none;">
+                                <span class="trace-dot"></span> 轨迹显示中
+                            </div>
+                            <div class="cycle-info">
+                                周期: <span class="cycle-count" id="cycleCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="motion-controls">
+                        <button id="fullCycleBtn" class="motion-btn full-cycle-btn">
+                            <i class="fas fa-sync-alt"></i> <span id="fullCycleText">连续运动</span>
+                        </button>
+                        <button id="traceBtn" class="motion-btn trace-btn">
+                            <i class="fas fa-dot-circle"></i> <span id="traceText">显示轨迹</span>
+                        </button>
+                        <div class="speed-control">
+                            <div class="speed-label">
+                                <span>速度</span>
+                                <span id="speedValue">1.0x</span>
+                            </div>
+                            <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1" class="speed-slider">
+                        </div>
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item"><div class="legend-color" style="background:#3498db"></div>机架AB</div>
+                        <div class="legend-item"><div class="legend-color" style="background:#2ecc71"></div>主动BC</div>
+                        <div class="legend-item"><div class="legend-color" style="background:#e74c3c"></div>连杆CD</div>
+                        <div class="legend-item"><div class="legend-color" style="background:#f39c12"></div>从动DA</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <div class="control-panel">
+                    <h3><i class="fas fa-ruler"></i> 尺寸与控制</h3>
+                    
+                    <div class="input-group">
+                        <label class="input-label">
+                            <span>主动杆 BC 长度</span>
+                            <span id="bcSliderValue" style="color:var(--primary-color)">100 mm</span>
+                        </label>
+                        <input type="range" id="bcSlider" min="50" max="250" step="1" value="100">
+                    </div>
+
+                    <div class="dimensions-display">
+                        <div class="dimension-item">
+                            <div class="dimension-label">机架 (AB)</div>
+                            <div class="dimension-value">100</div>
+                        </div>
+                        <div class="dimension-item active">
+                            <div class="dimension-label">主动杆 (BC)</div>
+                            <div class="dimension-value" id="bcValue">100</div>
+                        </div>
+                        <div class="dimension-item">
+                            <div class="dimension-label">连杆 (CD)</div>
+                            <div class="dimension-value">130</div>
+                        </div>
+                        <div class="dimension-item">
+                            <div class="dimension-label">从动杆 (DA)</div>
+                            <div class="dimension-value">150</div>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="startBtn" class="control-btn"><i class="fas fa-play"></i> 开始</button>
+                        <button id="pauseBtn" class="control-btn" disabled><i class="fas fa-pause"></i> 暂停</button>
+                        <button id="resetBtn" class="control-btn"><i class="fas fa-redo"></i> 重置</button>
+                    </div>
+                    
+                    <div class="angle-display">
+                        <div class="angle-item">
+                            <div class="angle-label">主动角</div>
+                            <div class="angle-value" id="inputAngle">0°</div>
+                        </div>
+                        <div class="angle-item">
+                            <div class="angle-label">从动角</div>
+                            <div class="angle-value" id="outputAngle">0°</div>
+                        </div>
+                        <div class="angle-item">
+                            <div class="angle-label">传动角</div>
+                            <div class="angle-value" id="transmissionAngle">90°</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <h3><i class="fas fa-clipboard-check"></i> 类型判断</h3>
+                    <div class="mechanism-type-box">
+                        <div class="type-indicator" id="crankRockerIndicator">
+                            <div>
+                                <span class="type-name crank-rocker">曲柄摇杆机构</span>
+                                <div style="font-size: 0.8rem; color: #6c757d;">主动杆转整圈，从动杆摆动</div>
+                            </div>
+                            <div class="type-icon crank-rocker"><i class="fas fa-exchange-alt"></i></div>
+                        </div>
+                        
+                        <div class="type-indicator" id="doubleCrankIndicator">
+                            <div>
+                                <span class="type-name double-crank">双曲柄机构</span>
+                                <div style="font-size: 0.8rem; color: #6c757d;">两杆均可整周转动</div>
+                            </div>
+                            <div class="type-icon double-crank"><i class="fas fa-sync-alt"></i></div>
+                        </div>
+                        
+                        <div class="type-indicator" id="doubleRockerIndicator">
+                            <div>
+                                <span class="type-name double-rocker">双摇杆机构</span>
+                                <div style="font-size: 0.8rem; color: #6c757d;">两杆均只能摆动</div>
+                            </div>
+                            <div class="type-icon double-rocker"><i class="fas fa-arrows-alt-h"></i></div>
+                        </div>
+                        
+                        <div class="type-description">
+                            <div style="font-weight:bold; margin-bottom:5px;">判断条件：</div>
+                            <div id="conditionText">正在计算...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <h2 class="section-title"><i class="fas fa-info-circle"></i> 四杆机构类型判断原理</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Grashof条件</h3>
+                    <p>四杆机构存在曲柄的充要条件是最短杆与最长杆长度之和小于或等于其余两杆长度之和，这称为Grashof条件：</p>
+                    <div class="formula">最短杆 + 最长杆 ≤ 其余两杆之和</div>
+                    <p>当满足Grashof条件时，机构存在曲柄，具体类型取决于哪根杆是机架：</p>
+                    <ul class="condition-list">
+                        <li><i class="fas fa-arrow-right crank-rocker"></i> 最短杆为机架 → <strong>双曲柄机构</strong></li>
+                        <li><i class="fas fa-arrow-right crank-rocker"></i> 最短杆的邻杆为机架 → <strong>曲柄摇杆机构</strong></li>
+                        <li><i class="fas fa-arrow-right crank-rocker"></i> 最短杆的对杆为机架 → <strong>双摇杆机构</strong></li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h3>机构类型特性</h3>
+                    <p><strong>曲柄摇杆机构：</strong>一个连架杆能做整周转动（曲柄），另一个连架杆只能在一定角度范围内摆动（摇杆）。这是最常见的四杆机构类型。</p>
+                    <p><strong>双曲柄机构：</strong>两个连架杆都能做整周转动。当两曲柄长度相等且平行时，称为平行四边形机构。</p>
+                    <p><strong>双摇杆机构：</strong>两个连架杆都只能在有限角度范围内摆动。不满足Grashof条件的机构一定是双摇杆机构。</p>
+                </div>
+                <div class="info-card">
+                    <h3>本机构参数分析</h3>
+                    <p>在本演示中，机架AB固定为100mm，从动杆DA为150mm，连杆CD为130mm，主动杆BC长度可调。</p>
+                    <p>通过调整BC长度，可以形成不同类型的四杆机构：</p>
+                    <ul class="condition-list">
+                        <li><i class="fas fa-check double-crank"></i> 当BC较短时，通常形成双曲柄机构</li>
+                        <li><i class="fas fa-check crank-rocker"></i> 当BC长度适中时，通常形成曲柄摇杆机构</li>
+                        <li><i class="fas fa-check double-rocker"></i> 当BC较长时，通常形成双摇杆机构</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const canvas = document.getElementById('mechanismCanvas');
+        const ctx = canvas.getContext('2d');
+        const bcSlider = document.getElementById('bcSlider');
+        const bcSliderValue = document.getElementById('bcSliderValue');
+        const bcValue = document.getElementById('bcValue');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const fullCycleBtn = document.getElementById('fullCycleBtn');
+        const fullCycleText = document.getElementById('fullCycleText');
+        const traceBtn = document.getElementById('traceBtn');
+        const traceText = document.getElementById('traceText');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const crankRockerIndicator = document.getElementById('crankRockerIndicator');
+        const doubleCrankIndicator = document.getElementById('doubleCrankIndicator');
+        const doubleRockerIndicator = document.getElementById('doubleRockerIndicator');
+        const conditionText = document.getElementById('conditionText');
+        const inputAngle = document.getElementById('inputAngle');
+        const outputAngle = document.getElementById('outputAngle');
+        const transmissionAngle = document.getElementById('transmissionAngle');
+        
+        // 浮动状态元素
+        const statusText = document.getElementById('statusText');
+        const statusDot = document.getElementById('statusDot');
+        const traceInfo = document.getElementById('traceInfo');
+        const cycleCountEl = document.getElementById('cycleCount');
+        
+        // 机构参数（单位：mm）
+        const AB = 100;   // 机架（固定）
+        let BC = 100;     // 主动连架杆（可调）
+        const CD = 130;   // 连杆
+        const DA = 150;   // 从动连架杆
+        
+        // 状态变量
+        let angle = 0;   // 主动杆BC的角度（度）
+        let baseSpeed = 1.0; // 基础角速度（度/帧）
+        let speedMultiplier = 1.0; // 速度倍数
+        let animationId = null;
+        let isAnimating = false;
+        let isContinuousMode = true; // 默认连续运动模式
+        let isTracing = false;
+        let tracePoints = [];
+        let cycleCount = 0;
+        
+        // 颜色定义
+        const colors = {
+            ground: '#3498db',      // 机架 - 蓝色
+            input: '#2ecc71',       // 主动杆 - 绿色
+            coupler: '#e74c3c',     // 连杆 - 红色
+            output: '#f39c12',      // 从动杆 - 橙色
+            highlight: '#1a2980',   // 高亮
+            background: '#f8f9fa',  // 背景
+            trace: '#9b59b6'        // 轨迹点颜色
+        };
+        
+        // 坐标系原点（机架A点位置）
+        let originX, originY;
+        
+        // 缩放系数 (改为变量，用于自适应)
+        let scale = 2.5;
+        
+        // 初始化
+        function init() {
+            // 设置画布大小
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 绘制初始机构
+            drawMechanism();
+            
+            // 判断初始机构类型
+            determineMechanismType();
+            
+            // 更新按钮状态
+            updateButtonStates();
+        }
+        
+        // 调整画布大小 (优化了缩放逻辑以适应移动端)
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
+            // 动态计算缩放比例：根据屏幕宽度调整，避免手机上机构太大溢出
+            // 基础逻辑：在小屏上，每100mm对应更少的像素
+            const minDim = Math.min(canvas.width, canvas.height);
+            if (canvas.width < 600) {
+                // 移动端：根据宽度动态计算，保证能放下约 350mm (最大展开尺寸)
+                scale = (canvas.width * 0.8) / 300; 
+                originX = canvas.width * 0.35; // 稍微居中
+                originY = canvas.height * 0.6;
+            } else {
+                // PC端：保持原有比例
+                scale = 2.5;
+                originX = canvas.width * 0.3;
+                originY = canvas.height * 0.6;
+            }
+            
+            // 重新绘制
+            drawMechanism();
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // BC长度控制
+            bcSlider.addEventListener('input', function() {
+                BC = parseInt(this.value);
+                bcSliderValue.textContent = BC + ' mm';
+                bcValue.textContent = BC + ' mm'; // 更新上方显示
+                
+                if (isAnimating) {
+                    stopAnimation();
+                }
+                
+                tracePoints = [];
+                drawMechanism();
+                determineMechanismType();
+                updateButtonStates();
+            });
+            
+            // 开始按钮
+            startBtn.addEventListener('click', function() {
+                if (!isAnimating) startAnimation();
+            });
+            
+            // 暂停按钮
+            pauseBtn.addEventListener('click', function() {
+                if (isAnimating) stopAnimation();
+            });
+            
+            // 重置按钮
+            resetBtn.addEventListener('click', function() {
+                resetSimulation();
+            });
+            
+            // 连续运动按钮
+            fullCycleBtn.addEventListener('click', function() {
+                isContinuousMode = !isContinuousMode;
+                fullCycleText.textContent = isContinuousMode ? '连续运动' : '单周期运动';
+                fullCycleBtn.innerHTML = isContinuousMode ? 
+                    '<i class="fas fa-sync-alt"></i> <span id="fullCycleText">连续运动</span>' : 
+                    '<i class="fas fa-redo"></i> <span id="fullCycleText">单周期运动</span>';
+                
+                if (isAnimating) {
+                    stopAnimation();
+                    startAnimation();
+                }
+            });
+            
+            // 轨迹显示按钮
+            traceBtn.addEventListener('click', function() {
+                isTracing = !isTracing;
+                traceBtn.classList.toggle('active');
+                traceText.textContent = isTracing ? '隐藏轨迹' : '显示轨迹';
+                traceInfo.style.display = isTracing ? 'inline-flex' : 'none';
+                
+                traceBtn.innerHTML = isTracing ? 
+                    '<i class="fas fa-eye-slash"></i> <span id="traceText">隐藏轨迹</span>' : 
+                    '<i class="fas fa-dot-circle"></i> <span id="traceText">显示轨迹</span>';
+                
+                if (!isTracing) tracePoints = [];
+                drawMechanism();
+            });
+            
+            // 速度控制滑块
+            speedSlider.addEventListener('input', function() {
+                speedMultiplier = parseFloat(this.value);
+                speedValue.textContent = speedMultiplier.toFixed(1) + 'x';
+            });
+        }
+        
+        // 开始动画
+        function startAnimation() {
+            const positions = calculatePositions();
+            if (!positions || !positions.valid) {
+                alert("机构无法装配，无法开始运动！请调整BC杆长度。");
+                return;
+            }
+            isAnimating = true;
+            updateStatusDisplay();
+            updateButtonStates();
+            animate();
+        }
+        
+        // 停止动画
+        function stopAnimation() {
+            isAnimating = false;
+            updateStatusDisplay();
+            updateButtonStates();
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        // 更新状态显示 (Canvas内/覆盖层)
+        function updateStatusDisplay() {
+            if (isAnimating) {
+                statusText.textContent = "运行中";
+                statusDot.classList.remove('status-inactive');
+                statusDot.classList.add('status-active');
+            } else {
+                statusText.textContent = "已停止";
+                statusDot.classList.remove('status-active');
+                statusDot.classList.add('status-inactive');
+            }
+        }
+        
+        // 更新按钮状态
+        function updateButtonStates() {
+            startBtn.disabled = isAnimating;
+            pauseBtn.disabled = !isAnimating;
+            
+            const positions = calculatePositions();
+            const canAnimate = positions && positions.valid;
+            
+            if (!canAnimate) {
+                startBtn.disabled = true;
+                if (isAnimating) stopAnimation();
+            }
+        }
+        
+        // 重置模拟
+        function resetSimulation() {
+            stopAnimation();
+            angle = 0;
+            cycleCount = 0;
+            cycleCountEl.textContent = "0";
+            tracePoints = [];
+            drawMechanism();
+            updateButtonStates();
+        }
+        
+        // 动画循环
+        function animate() {
+            if (!isAnimating) return;
+            
+            const actualSpeed = baseSpeed * speedMultiplier;
+            angle += actualSpeed;
+            
+            if (angle >= 360) {
+                angle = angle % 360;
+                cycleCount++;
+                cycleCountEl.textContent = cycleCount;
+                
+                if (!isContinuousMode) {
+                    stopAnimation();
+                    return;
+                }
+            }
+            
+            const positions = calculatePositions();
+            if (!positions || !positions.valid) {
+                stopAnimation();
+                alert("机构无法继续运动！请调整BC杆长度。");
+                return;
+            }
+            
+            drawMechanism();
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 判断机构类型
+        function determineMechanismType() {
+            const lengths = [AB, BC, CD, DA];
+            const maxLength = Math.max(...lengths);
+            const minLength = Math.min(...lengths);
+            const sumOtherTwo = AB + BC + CD + DA - maxLength - minLength;
+            const isGrashof = (maxLength + minLength) <= sumOtherTwo;
+            
+            let shortestIndex = -1;
+            if (AB === minLength) shortestIndex = 0;
+            else if (BC === minLength) shortestIndex = 1;
+            else if (CD === minLength) shortestIndex = 2;
+            else if (DA === minLength) shortestIndex = 3;
+            
+            let mechanismType = "";
+            let conditionDesc = "";
+            
+            if (!isGrashof) {
+                mechanismType = "doubleRocker";
+                conditionDesc = `不满足Grashof条件：最长杆(${maxLength}) + 最短杆(${minLength}) > 其余和(${sumOtherTwo})，双摇杆。`;
+            } else {
+                if (shortestIndex === 0) {
+                    mechanismType = "doubleCrank";
+                    conditionDesc = `满足条件，机架AB最短，双曲柄。`;
+                } else if (shortestIndex === 1 || shortestIndex === 3) {
+                    mechanismType = "crankRocker";
+                    const shortestName = shortestIndex === 1 ? "BC" : "DA";
+                    conditionDesc = `满足条件，${shortestName}最短(连架杆)，曲柄摇杆。`;
+                } else {
+                    mechanismType = "doubleRocker";
+                    conditionDesc = `满足条件，但连杆CD最短，双摇杆。`;
+                }
+            }
+            updateMechanismTypeDisplay(mechanismType, conditionDesc);
+            return mechanismType;
+        }
+        
+        // 更新机构类型显示
+        function updateMechanismTypeDisplay(type, condition) {
+            crankRockerIndicator.classList.remove('active');
+            doubleCrankIndicator.classList.remove('active');
+            doubleRockerIndicator.classList.remove('active');
+            
+            if (type === "crankRocker") crankRockerIndicator.classList.add('active');
+            else if (type === "doubleCrank") doubleCrankIndicator.classList.add('active');
+            else if (type === "doubleRocker") doubleRockerIndicator.classList.add('active');
+            
+            conditionText.textContent = condition;
+        }
+        
+        // 计算机构位置 (核心几何解算)
+        function calculatePositions() {
+            const angleRad = -angle * Math.PI / 180;
+            const Bx = originX + AB * scale;
+            const By = originY;
+            const Ax = originX;
+            const Ay = originY;
+            const Cx = Bx + BC * scale * Math.cos(angleRad);
+            const Cy = By + BC * scale * Math.sin(angleRad);
+            
+            const AC = Math.sqrt(Math.pow(Cx - Ax, 2) + Math.pow(Cy - Ay, 2));
+            if (AC > CD * scale + DA * scale || AC < Math.abs(CD * scale - DA * scale)) {
+                return null;
+            }
+            
+            const cosTheta = (DA * DA * scale * scale + AC * AC - CD * CD * scale * scale) / (2 * DA * scale * AC);
+            const theta = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
+            const phi = Math.atan2(Cy - Ay, Cx - Ax);
+            
+            const Dx1 = Ax + DA * scale * Math.cos(phi + theta);
+            const Dy1 = Ay + DA * scale * Math.sin(phi + theta);
+            const Dx2 = Ax + DA * scale * Math.cos(phi - theta);
+            const Dy2 = Ay + DA * scale * Math.sin(phi - theta);
+            
+            let Dx, Dy;
+            if (Dy1 < Dy2) { Dx = Dx1; Dy = Dy1; } else { Dx = Dx2; Dy = Dy2; }
+            
+            // 传动角计算
+            const CDx = Dx - Cx; const CDy = Dy - Cy;
+            const ADx = Dx - Ax; const ADy = Dy - Ay;
+            const dotProduct = CDx * ADx + CDy * ADy;
+            const magCD = Math.sqrt(CDx*CDx + CDy*CDy);
+            const magAD = Math.sqrt(ADx*ADx + ADy*ADy);
+            let transAngle = 90;
+            if (magCD > 0 && magAD > 0) {
+                const cosA = dotProduct / (magCD * magAD);
+                transAngle = Math.acos(Math.max(-1, Math.min(1, cosA))) * 180 / Math.PI;
+                if (transAngle > 90) transAngle = 180 - transAngle;
+            }
+            
+            const outAngle = Math.atan2(Dy - Ay, Dx - Ax) * 180 / Math.PI;
+            
+            return {
+                A: {x: Ax, y: Ay}, B: {x: Bx, y: By}, C: {x: Cx, y: Cy}, D: {x: Dx, y: Dy},
+                transmissionAngle: transAngle, outputAngle: outAngle, valid: true
+            };
+        }
+        
+        // 绘制机构
+        function drawMechanism() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            
+            const positions = calculatePositions();
+            
+            if (isTracing && positions && positions.valid) {
+                tracePoints.push({x: positions.C.x, y: positions.C.y});
+                if (tracePoints.length > 500) tracePoints.shift();
+            }
+            if (isTracing) drawTracePoints();
+            
+            if (!positions || !positions.valid) {
+                drawInvalidPosition();
+                if (isAnimating) stopAnimation();
+                return;
+            }
+            
+            drawGround();
+            drawFixedPoint(positions.A.x, positions.A.y, 'A');
+            drawFixedPoint(positions.B.x, positions.B.y, 'B');
+            
+            drawLink(positions.A, positions.B, colors.ground, 8, 'AB');
+            drawLink(positions.B, positions.C, colors.input, 8, 'BC');
+            drawLink(positions.C, positions.D, colors.coupler, 6, 'CD');
+            drawLink(positions.D, positions.A, colors.output, 8, 'DA');
+            
+            drawHingePoint(positions.C.x, positions.C.y, 10);
+            drawHingePoint(positions.D.x, positions.D.y, 10);
+            
+            drawAngleMark(positions.B, positions.C, angle);
+            drawTransmissionAngleMark(positions.D, positions.C, positions.A, positions.transmissionAngle);
+            drawLengthLabels(positions);
+            updateAngleDisplays(positions);
+        }
+        
+        function drawBackground() {
+            ctx.fillStyle = colors.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const gridSize = 30;
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+        }
+        
+        function drawGround() {
+            ctx.beginPath(); ctx.moveTo(0, originY + 15); ctx.lineTo(canvas.width, originY + 15);
+            ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 3; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, originY + 15); ctx.lineTo(canvas.width, originY + 15);
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; ctx.lineWidth = 1; ctx.stroke();
+        }
+        
+        function drawFixedPoint(x, y, label) {
+            ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2); ctx.fillStyle = '#2c3e50'; ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fillStyle = '#34495e'; ctx.fill();
+            ctx.fillStyle = 'white'; ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y);
+        }
+        
+        function drawHingePoint(x, y, radius) {
+            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fillStyle = 'white'; ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, radius - 4, 0, Math.PI * 2); ctx.fillStyle = '#2c3e50'; ctx.fill();
+        }
+        
+        function drawLink(start, end, color, width, label) {
+            ctx.beginPath(); ctx.moveTo(start.x, start.y); ctx.lineTo(end.x, end.y);
+            ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.stroke();
+            
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(midX - 15, midY - 10, 30, 20);
+            ctx.fillStyle = color; ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, midX, midY);
+        }
+        
+        function drawTracePoints() {
+            if (tracePoints.length < 2) return;
+            ctx.strokeStyle = colors.trace; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(tracePoints[0].x, tracePoints[0].y);
+            for (let i = 1; i < tracePoints.length; i++) ctx.lineTo(tracePoints[i].x, tracePoints[i].y);
+            ctx.stroke();
+            ctx.fillStyle = colors.trace;
+            for (let i = 0; i < tracePoints.length; i += 5) {
+                ctx.beginPath(); ctx.arc(tracePoints[i].x, tracePoints[i].y, 3, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        
+        function drawAngleMark(B, C, angle) {
+            const radius = 50;
+            ctx.beginPath();
+            ctx.arc(B.x, B.y, radius, -Math.PI/2, -Math.PI/2 - angle * Math.PI/180);
+            ctx.strokeStyle = colors.input; ctx.lineWidth = 3; ctx.stroke();
+        }
+        
+        function drawTransmissionAngleMark(D, C, A, transmissionAngle) {
+            const radius = 60;
+            const angleCD = Math.atan2(C.y - D.y, C.x - D.x);
+            const angleAD = Math.atan2(A.y - D.y, A.x - D.x);
+            ctx.beginPath(); ctx.arc(D.x, D.y, radius, angleAD, angleCD);
+            ctx.strokeStyle = '#9b59b6'; ctx.lineWidth = 4; ctx.stroke();
+        }
+        
+        function drawLengthLabels(positions) {
+            // 已在 drawLink 中实现简单标注，此处保留接口
+        }
+        
+        function updateAngleDisplays(positions) {
+            let dispAngle = angle % 360;
+            if (dispAngle < 0) dispAngle += 360;
+            inputAngle.textContent = `${dispAngle.toFixed(1)}°`;
+            
+            let dispOut = positions.outputAngle;
+            if (dispOut < 0) dispOut += 360;
+            outputAngle.textContent = `${dispOut.toFixed(1)}°`;
+            
+            transmissionAngle.textContent = `${positions.transmissionAngle.toFixed(1)}°`;
+        }
+        
+        function drawInvalidPosition() {
+            ctx.fillStyle = 'rgba(231, 76, 60, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(231, 76, 60, 0.9)'; ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center'; ctx.fillText('机构无法装配', canvas.width/2, canvas.height/2);
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>

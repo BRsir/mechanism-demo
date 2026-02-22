@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>平底推杆凸轮 · 反转法可视化 · 实际/理论轮廓</title>
+    <style>
+        /* === 浅色专业主题，适合课堂与文档 === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f4f9fc 0%, #e3eef5 100%);
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            padding: 20px;
+            color: #1a3b44;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .master-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            border: 1px solid #c8dde5;
+            box-shadow: 0 20px 30px rgba(0, 40, 50, 0.1);
+            padding: 24px;
+        }
+
+        .title-area {
+            margin-bottom: 20px;
+            padding: 0 16px;
+        }
+
+        .main-title {
+            font-size: 2.4rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #0b5e7c, #1e7e9c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .sub-title {
+            color: #2a6477;
+            font-size: 1.1rem;
+            border-left: 6px solid #1e88b5;
+            padding-left: 16px;
+            background: rgba(200, 230, 240, 0.5);
+            border-radius: 0 30px 30px 0;
+            line-height: 1.5;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 24px;
+        }
+
+        /* === 左侧画布区 (浅色卡片) === */
+        .canvas-card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 16px;
+            box-shadow: 0 2px 15px rgba(0, 70, 90, 0.08);
+            border: 1px solid #cce2ea;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #fbfeff;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #bed6e0;
+        }
+
+        #camCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .legend-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 18px;
+            padding: 12px;
+            background: #ecf7fb;
+            border-radius: 50px;
+            color: #1d4e63;
+            border: 1px solid #b7d4e2;
+            font-weight: 500;
+        }
+
+        /* === 右侧控制区 (浅色) === */
+        .control-card {
+            background: #f3fafd;
+            border-radius: 28px;
+            padding: 24px;
+            border: 1px solid #b9d3df;
+            box-shadow: 0 5px 0 #c6dae2, 0 8px 16px rgba(0,30,40,0.06);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #11516d;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #b1d2e0;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .law-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .law-btn {
+            flex: 1;
+            padding: 14px 6px;
+            background: #d3e7f0;
+            border: none;
+            color: #10475c;
+            font-weight: 600;
+            border-radius: 40px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 0 #9ebac8;
+        }
+
+        .law-btn.active {
+            background: #1e88b5;
+            color: white;
+            box-shadow: 0 4px 0 #0e5a7a;
+            border: 1px solid #9ac8dd;
+        }
+
+        .slider-panel {
+            background: #e7f2f8;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid #c4dae6;
+        }
+
+        .slider-item {
+            margin-bottom: 22px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .slider-label {
+            color: #115166;
+            font-weight: 500;
+        }
+
+        .slider-value {
+            background: #d1e4ee;
+            padding: 4px 14px;
+            border-radius: 30px;
+            color: #073845;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 8px;
+            background: #b9d4e2;
+            border-radius: 10px;
+            -webkit-appearance: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #1e88b5;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px #0f4d66;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        input[type=range]:disabled {
+            opacity: 0.6;
+        }
+        input[type=range]:disabled::-webkit-slider-thumb {
+            background: #8baec2;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .angle-input-area {
+            background: #e2f0f6;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 16px;
+            border: 1px solid #b8d2e0;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            flex: 1;
+            color: #115066;
+        }
+
+        .input-group input {
+            flex: 2;
+            padding: 12px;
+            border-radius: 40px;
+            border: 1px solid #9fc0cf;
+            background: white;
+            color: #073845;
+            font-weight: 600;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .pressure-angle-box {
+            background: #e0f0f8;
+            padding: 16px;
+            border-radius: 20px;
+            text-align: center;
+            border-left: 8px solid #f08c3e;
+            margin-top: 20px;
+        }
+
+        .pressure-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #b65f22;
+            text-shadow: 0 0 6px #ffb26e;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 0;
+            border-radius: 60px;
+            border: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+            box-shadow: 0 5px 0 rgba(0, 50, 60, 0.2);
+        }
+
+        .btn-start {
+            background: #0f9d58;
+        }
+        .btn-pause {
+            background: #e67e22;
+        }
+        .btn-reset {
+            background: #c0392b;
+        }
+
+        .diagram-canvas {
+            margin-top: 30px;
+            background: #f4fbfe;
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid #c0d8e4;
+        }
+
+        #motionCanvas {
+            width: 100%;
+            height: 180px;
+            display: block;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #c2dae5;
+        }
+
+        footer {
+            margin-top: 24px;
+            color: #467a8c;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .note {
+            font-size: 0.9rem;
+            color: #1f657b;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="master-container">
+        <div class="title-area">
+            <div class="main-title">🧑‍🏫 平底推杆凸轮 · 反转法原理</div>
+            <div class="sub-title">凸轮固定 · 推杆反转+移动 · 包络线形成轮廓 · 压力角恒0°</div>
+        </div>
+
+        <div class="grid-2col">
+            <!-- 左侧：反转法可视化（凸轮固定，推杆反转） -->
+            <div class="canvas-card">
+                <div class="canvas-wrapper">
+                    <canvas id="camCanvas"></canvas>
+                </div>
+                <div class="legend-bar">
+                    <span><span style="display:inline-block; width:16px; height:16px; background:#2c3e50; border-radius:4px;"></span> 基圆 (R₀=50)</span>
+                    <span><span style="display:inline-block; width:16px; height:16px; background:#e74c3c; border-radius:4px;"></span> 实际轮廓(包络线)</span>
+                    <span><span style="display:inline-block; width:16px; height:16px; background:#2ecc71; border-radius:4px;"></span> 理论轮廓(中心轨迹)</span>
+                    <span><span style="display:inline-block; width:16px; height:16px; background:#3498db; border-radius:4px;"></span> 平底推杆(反转位置)</span>
+                    <span><span style="display:inline-block; width:16px; height:16px; background:#f1c40f; border-radius:4px;"></span> 接触点/法线</span>
+                </div>
+            </div>
+
+            <!-- 右侧：交互控制 -->
+            <div class="control-card">
+                <div class="section-title">
+                    <span>⚙️ 运动规律</span>
+                </div>
+                <!-- 三种运动规律选择 -->
+                <div class="law-selector" id="lawSelector">
+                    <button id="lawSine" class="law-btn active">正弦加速度</button>
+                    <button id="lawCosine" class="law-btn">余弦加速度</button>
+                    <button id="lawConstAcc" class="law-btn">等加速等减速</button>
+                </div>
+
+                <!-- 运动角调节滑块（四个角，总和360°，近休止自动计算并禁用滑块） -->
+                <div class="slider-panel">
+                    <div style="color:#115974; margin-bottom:16px;">📐 运动角调节 (总和360°)</div>
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span class="slider-label">推程升角 Φ₁</span>
+                            <span class="slider-value" id="phi1Val">150°</span>
+                        </div>
+                        <input type="range" id="phi1Slider" min="20" max="300" value="150" step="1">
+                    </div>
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span class="slider-label">远休止角 Φ₂</span>
+                            <span class="slider-value" id="phi2Val">30°</span>
+                        </div>
+                        <input type="range" id="phi2Slider" min="0" max="180" value="30" step="1">
+                    </div>
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span class="slider-label">回程角 Φ₃</span>
+                            <span class="slider-value" id="phi3Val">90°</span>
+                        </div>
+                        <input type="range" id="phi3Slider" min="20" max="300" value="90" step="1">
+                    </div>
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span class="slider-label">近休止角 Φ₄</span>
+                            <span class="slider-value" id="phi4Val">90°</span>
+                        </div>
+                        <input type="range" id="phi4Slider" min="0" max="360" value="90" step="1" disabled>
+                    </div>
+                    <div class="note">* 调节前三角，近休止自动补足360°</div>
+                </div>
+
+                <!-- 凸轮转角输入（即反转角度）& 压力角显示 -->
+                <div class="angle-input-area">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <div style="flex:2;">
+                            <label style="color:#115066;">凸轮转角 θ (反转角 -θ)</label>
+                            <input type="number" id="camAngleInput" min="0" max="360" value="0" step="5" style="width:100%;">
+                        </div>
+                        <div style="flex:1;">
+                            <button id="applyAngleBtn" style="width:100%; padding:12px; background:#1e88b5; border:none; border-radius:40px; color:white; font-weight:bold; cursor:pointer;">更新</button>
+                        </div>
+                    </div>
+                    <div class="pressure-angle-box" style="margin-top:20px;">
+                        <div style="font-size:1.1rem;">📐 压力角 α (平底推杆)</div>
+                        <div class="pressure-value" id="pressureDisplay">0.0°</div>
+                        <div style="font-size:0.85rem; color:#236d88;">平底法线=运动方向，恒为0°</div>
+                    </div>
+                </div>
+
+                <!-- 动画控制按钮（反转运动） -->
+                <div class="btn-group">
+                    <button class="btn btn-start" id="startAnimBtn">▶ 反转运动</button>
+                    <button class="btn btn-pause" id="pauseAnimBtn">⏸️ 暂停</button>
+                    <button class="btn btn-reset" id="resetBtn">↺ 重置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 运动线图：位移、速度、加速度 -->
+        <div class="diagram-canvas">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                <span style="color:#115974; font-weight:600;">📈 推杆运动线图 (ω = 1.5 rad/s)</span>
+                <span style="color:#1d6f8b;" id="curveLawName">正弦加速度</span>
+            </div>
+            <canvas id="motionCanvas"></canvas>
+        </div>
+        <footer>
+            ⚙️ 反转法演示 · 凸轮固定，推杆反向旋转并移动 · 平底直线族包络形成轮廓 · 压力角恒0°
+        </footer>
+    </div>
+
+    <script>
+        (function(){
+            "use strict";
+
+            // ---------- 全局常量与参数 ----------
+            const BASE_RADIUS = 50;          // 基圆半径 (mm)
+            const LIFT = 16;                // 总升程 (mm) — 题目指定16mm
+            const OMEGA = 1.5;              // 凸轮角速度 (rad/s) — 题目指定
+            const SCALE = 3.2;              // 显示比例 px/mm
+            const FLAT_WIDTH = 36;          // 平底宽度 (mm)
+            const FOLLOWER_VISIBLE_LEN = 70; // 推杆绘制长度 (mm)
+            const PROFILE_STEP = 0.25;       // 轮廓采样步长（度），0.25° 极高精度
+
+            // 运动角变量 (度)  初始值按照题目示例：150°推程，30°远休止，90°回程，90°近休止
+            let phi1 = 150;   // 推程角
+            let phi2 = 30;    // 远休止角
+            let phi3 = 90;    // 回程角
+            let phi4 = 90;    // 近休止角 (自动计算)
+
+            // 当前运动规律: 'sine', 'cosine', 'constAcc'
+            let currentLaw = 'sine';
+
+            // 凸轮实际转角 (度) —— 用于反转法：推杆反向旋转 -θ
+            let currentCamAngle = 0;  
+
+            // 动画控制
+            let isAnimating = false;
+            let animFrameId = null;
+            let lastTimestamp = 0;
+
+            // ---------- DOM 元素绑定 ----------
+            const camCanvas = document.getElementById('camCanvas');
+            const camCtx = camCanvas.getContext('2d');
+            const motionCanvas = document.getElementById('motionCanvas');
+            const motionCtx = motionCanvas.getContext('2d');
+
+            // 滑块、显示
+            const phi1Slider = document.getElementById('phi1Slider');
+            const phi2Slider = document.getElementById('phi2Slider');
+            const phi3Slider = document.getElementById('phi3Slider');
+            const phi4Slider = document.getElementById('phi4Slider'); // 禁用滑块
+            const phi1Val = document.getElementById('phi1Val');
+            const phi2Val = document.getElementById('phi2Val');
+            const phi3Val = document.getElementById('phi3Val');
+            const phi4Val = document.getElementById('phi4Val');
+
+            const lawSineBtn = document.getElementById('lawSine');
+            const lawCosineBtn = document.getElementById('lawCosine');
+            const lawConstAccBtn = document.getElementById('lawConstAcc');
+            const curveLawName = document.getElementById('curveLawName');
+
+            const camAngleInput = document.getElementById('camAngleInput');
+            const applyAngleBtn = document.getElementById('applyAngleBtn');
+            const pressureDisplay = document.getElementById('pressureDisplay');
+
+            const startAnimBtn = document.getElementById('startAnimBtn');
+            const pauseAnimBtn = document.getElementById('pauseAnimBtn');
+            const resetBtn = document.getElementById('resetBtn');
+
+            // ---------- 辅助函数 ----------
+            function deg2rad(deg) { return deg * Math.PI / 180; }
+            function rad2deg(rad) { return rad * 180 / Math.PI; }
+
+            // 更新 phi4 根据总和360°
+            function updatePhi4FromOthers() {
+                phi4 = 360 - phi1 - phi2 - phi3;
+                if (phi4 < 0) {
+                    phi3 = 360 - phi1 - phi2;
+                    if (phi3 < 20) phi3 = 20;
+                    phi4 = 360 - phi1 - phi2 - phi3;
+                }
+                if (phi4 > 360) phi4 = 360;
+                phi4Val.textContent = Math.round(phi4) + '°';
+                phi4Slider.value = Math.round(phi4);
+                phi1Val.textContent = phi1 + '°';
+                phi2Val.textContent = phi2 + '°';
+                phi3Val.textContent = phi3 + '°';
+            }
+
+            // 滑块监听
+            phi1Slider.addEventListener('input', function() {
+                phi1 = parseInt(this.value);
+                phi1Val.textContent = phi1 + '°';
+                updatePhi4FromOthers();
+                regenerateCamProfile();
+                if (!isAnimating) drawAll();
+                drawMotionCurves();
+            });
+            phi2Slider.addEventListener('input', function() {
+                phi2 = parseInt(this.value);
+                phi2Val.textContent = phi2 + '°';
+                updatePhi4FromOthers();
+                regenerateCamProfile();
+                if (!isAnimating) drawAll();
+                drawMotionCurves();
+            });
+            phi3Slider.addEventListener('input', function() {
+                phi3 = parseInt(this.value);
+                phi3Val.textContent = phi3 + '°';
+                updatePhi4FromOthers();
+                regenerateCamProfile();
+                if (!isAnimating) drawAll();
+                drawMotionCurves();
+            });
+
+            // 运动规律切换
+            lawSineBtn.addEventListener('click', function() {
+                setActiveLaw('sine');
+                currentLaw = 'sine';
+                curveLawName.textContent = '正弦加速度';
+                regenerateCamProfile();
+                drawAll();
+                drawMotionCurves();
+            });
+            lawCosineBtn.addEventListener('click', function() {
+                setActiveLaw('cosine');
+                currentLaw = 'cosine';
+                curveLawName.textContent = '余弦加速度';
+                regenerateCamProfile();
+                drawAll();
+                drawMotionCurves();
+            });
+            lawConstAccBtn.addEventListener('click', function() {
+                setActiveLaw('constAcc');
+                currentLaw = 'constAcc';
+                curveLawName.textContent = '等加速等减速';
+                regenerateCamProfile();
+                drawAll();
+                drawMotionCurves();
+            });
+
+            function setActiveLaw(law) {
+                [lawSineBtn, lawCosineBtn, lawConstAccBtn].forEach(btn => btn.classList.remove('active'));
+                if (law === 'sine') lawSineBtn.classList.add('active');
+                if (law === 'cosine') lawCosineBtn.classList.add('active');
+                if (law === 'constAcc') lawConstAccBtn.classList.add('active');
+            }
+
+            // ---------- 核心：位移、导数（输入φ为度，输出mm，导数mm/度）--------
+            function getDisplacementAndDerivative(phiDeg, h, ph1, ph2, ph3, ph4, law) {
+                const totalRise = h;
+                let s = 0;
+                let ds_dphi = 0;
+                const phiStartRise = 0;
+                const phiEndRise = ph1;
+                const phiStartDwellTop = ph1;
+                const phiEndDwellTop = ph1 + ph2;
+                const phiStartFall = ph1 + ph2;
+                const phiEndFall = ph1 + ph2 + ph3;
+                const phiStartDwellBottom = ph1 + ph2 + ph3;
+                const phiEndDwellBottom = 360;
+
+                if (phiDeg >= phiStartRise && phiDeg < phiEndRise) {
+                    const phi = phiDeg - phiStartRise;
+                    const beta = ph1;
+                    if (law === 'sine') {
+                        s = totalRise * (phi / beta - Math.sin(2 * Math.PI * phi / beta) / (2 * Math.PI));
+                        ds_dphi = totalRise / beta * (1 - Math.cos(2 * Math.PI * phi / beta));
+                    } else if (law === 'cosine') {
+                        s = totalRise / 2 * (1 - Math.cos(Math.PI * phi / beta));
+                        ds_dphi = (totalRise * Math.PI / (2 * beta)) * Math.sin(Math.PI * phi / beta);
+                    } else if (law === 'constAcc') {
+                        const half = beta / 2;
+                        if (phi <= half) {
+                            s = 2 * totalRise * (phi / beta) * (phi / beta);
+                            ds_dphi = 4 * totalRise * phi / (beta * beta);
+                        } else {
+                            s = totalRise - 2 * totalRise * Math.pow((beta - phi) / beta, 2);
+                            ds_dphi = 4 * totalRise * (beta - phi) / (beta * beta);
+                        }
+                    }
+                } else if (phiDeg >= phiStartDwellTop && phiDeg < phiEndDwellTop) {
+                    s = totalRise;
+                    ds_dphi = 0;
+                } else if (phiDeg >= phiStartFall && phiDeg < phiEndFall) {
+                    const phi = phiDeg - phiStartFall;
+                    const beta = ph3;
+                    if (law === 'sine') {
+                        s = totalRise * (1 - phi / beta + Math.sin(2 * Math.PI * phi / beta) / (2 * Math.PI));
+                        ds_dphi = -totalRise / beta * (1 - Math.cos(2 * Math.PI * phi / beta));
+                    } else if (law === 'cosine') {
+                        s = totalRise / 2 * (1 + Math.cos(Math.PI * phi / beta));
+                        ds_dphi = -(totalRise * Math.PI / (2 * beta)) * Math.sin(Math.PI * phi / beta);
+                    } else if (law === 'constAcc') {
+                        const half = beta / 2;
+                        if (phi <= half) {
+                            s = totalRise - 2 * totalRise * (phi / beta) * (phi / beta);
+                            ds_dphi = -4 * totalRise * phi / (beta * beta);
+                        } else {
+                            s = 2 * totalRise * Math.pow((beta - phi) / beta, 2);
+                            ds_dphi = -4 * totalRise * (beta - phi) / (beta * beta);
+                        }
+                    }
+                } else {
+                    s = 0;
+                    ds_dphi = 0;
+                }
+                return { s, ds_dphi };
+            }
+
+            // ---------- 凸轮轮廓生成（实际轮廓 + 理论轮廓）--------
+            let camProfileBase = [];      // 实际轮廓点 (mm) 凸轮固定坐标系
+            let theoryProfileBase = [];   // 理论轮廓点 (mm) 平底中心轨迹
+
+            function regenerateCamProfile() {
+                const camPoints = [];
+                const theoryPoints = [];
+                for (let phiDeg = 0; phiDeg <= 360; phiDeg += PROFILE_STEP) {
+                    const res = getDisplacementAndDerivative(phiDeg, LIFT, phi1, phi2, phi3, phi4, currentLaw);
+                    const s = res.s;
+                    let ds_dphi = res.ds_dphi;
+                    const ds_drad = ds_dphi * (180 / Math.PI); 
+                    const phiRad = deg2rad(phiDeg);
+                    const rb = BASE_RADIUS;
+                    // 实际轮廓（包络线）
+                    const camX = (rb + s) * Math.sin(phiRad) + ds_drad * Math.cos(phiRad);
+                    const camY = (rb + s) * Math.cos(phiRad) - ds_drad * Math.sin(phiRad);
+                    camPoints.push({ x: camX, y: camY, phiDeg });
+                    // 理论轮廓（平底中心轨迹）
+                    const theoryX = (rb + s) * Math.sin(phiRad);
+                    const theoryY = (rb + s) * Math.cos(phiRad);
+                    theoryPoints.push({ x: theoryX, y: theoryY, phiDeg });
+                }
+                camProfileBase = camPoints;
+                theoryProfileBase = theoryPoints;
+            }
+
+            // 初始生成
+            regenerateCamProfile();
+
+            // ---------- 计算点到线段的最短距离点（垂足或端点）---------
+            function closestPointOnSegment(p, a, b) {
+                const ab = { x: b.x - a.x, y: b.y - a.y };
+                const ap = { x: p.x - a.x, y: p.y - a.y };
+                const t = (ap.x * ab.x + ap.y * ab.y) / (ab.x * ab.x + ab.y * ab.y);
+                if (t < 0) return a;
+                if (t > 1) return b;
+                return { x: a.x + t * ab.x, y: a.y + t * ab.y };
+            }
+
+            // ---------- 精确计算接触点：平底线段与固定轮廓的最短距离点 ----------
+            function computeContactPoint(contourPoints, flatA, flatB) {
+                let minDist = Infinity;
+                let contact = { x: (flatA.x + flatB.x) / 2, y: (flatA.y + flatB.y) / 2 }; // 默认中点
+                for (let pt of contourPoints) {
+                    const proj = closestPointOnSegment(pt, flatA, flatB);
+                    const dist = Math.hypot(pt.x - proj.x, pt.y - proj.y);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        contact = proj;
+                    }
+                }
+                return contact;
+            }
+
+            // ---------- 绘制主画布：反转法可视化，凸轮固定，推杆反转 ----------
+            function drawAll() {
+                if (!camCanvas.width || !camCanvas.height) return;
+                camCtx.clearRect(0, 0, camCanvas.width, camCanvas.height);
+
+                const centerX = camCanvas.width / 2;
+                const centerY = camCanvas.height / 2;
+
+                // 保存状态，原点移至画布中心，Y轴向上
+                camCtx.save();
+                camCtx.translate(centerX, centerY);
+                camCtx.scale(1, -1);  // Y轴向上
+
+                // 绘制网格 (浅色细线)
+                drawGrid(camCtx, SCALE * 120);
+
+                // ----- 基圆 (固定) -----
+                camCtx.beginPath();
+                camCtx.arc(0, 0, BASE_RADIUS * SCALE, 0, 2 * Math.PI);
+                camCtx.strokeStyle = '#2c3e50';
+                camCtx.lineWidth = 2.8;
+                camCtx.stroke();
+                camCtx.fillStyle = 'rgba(44,62,80,0.05)';
+                camCtx.fill();
+
+                // ----- 固定实际轮廓（红色实线）-----
+                const fixedCamPoints = camProfileBase.map(p => ({ x: p.x * SCALE, y: p.y * SCALE }));
+                if (fixedCamPoints.length > 2) {
+                    camCtx.beginPath();
+                    camCtx.moveTo(fixedCamPoints[0].x, fixedCamPoints[0].y);
+                    for (let i = 1; i < fixedCamPoints.length; i++) {
+                        camCtx.lineTo(fixedCamPoints[i].x, fixedCamPoints[i].y);
+                    }
+                    camCtx.closePath();
+                    camCtx.strokeStyle = '#e74c3c';
+                    camCtx.lineWidth = 3.2;
+                    camCtx.stroke();
+                    camCtx.fillStyle = 'rgba(231,76,60,0.08)';
+                    camCtx.fill();
+                }
+
+                // ----- 固定理论轮廓（绿色虚线）-----
+                const fixedTheoryPoints = theoryProfileBase.map(p => ({ x: p.x * SCALE, y: p.y * SCALE }));
+                if (fixedTheoryPoints.length > 2) {
+                    camCtx.beginPath();
+                    camCtx.setLineDash([5, 5]);
+                    camCtx.moveTo(fixedTheoryPoints[0].x, fixedTheoryPoints[0].y);
+                    for (let i = 1; i < fixedTheoryPoints.length; i++) {
+                        camCtx.lineTo(fixedTheoryPoints[i].x, fixedTheoryPoints[i].y);
+                    }
+                    camCtx.closePath();
+                    camCtx.strokeStyle = '#2ecc71';
+                    camCtx.lineWidth = 2.5;
+                    camCtx.stroke();
+                    camCtx.setLineDash([]);
+                }
+
+                // ----- 凸轮中心点-----
+                camCtx.beginPath();
+                camCtx.arc(0, 0, 8, 0, 2 * Math.PI);
+                camCtx.fillStyle = '#bfdbe7';
+                camCtx.shadowBlur = 4;
+                camCtx.fill();
+                camCtx.shadowBlur = 0;
+
+                // ----- 反转法：推杆位置计算（凸轮实际转角θ，推杆反转 -θ）-----
+                const thetaRad = deg2rad(currentCamAngle);
+                // 导路方向（推杆中心线）：从原点指向外，方向角 = θ (因为反转 -θ 后，初始向上(0,1)旋转 -θ => (sinθ, cosθ) )
+                const dirX = Math.sin(thetaRad);
+                const dirY = Math.cos(thetaRad);  // Y向上坐标系
+
+                // 当前位移
+                const resCurr = getDisplacementAndDerivative(currentCamAngle, LIFT, phi1, phi2, phi3, phi4, currentLaw);
+                const sCurr = resCurr.s;
+
+                // 平底中心位置（沿导路方向）
+                const centerR = (BASE_RADIUS + sCurr) * SCALE;
+                const flatCenterX = centerR * dirX;
+                const flatCenterY = centerR * dirY;
+
+                // 平底方向（垂直于导路）
+                const perpX = -dirY;
+                const perpY = dirX;
+                const halfFlat = (FLAT_WIDTH * SCALE) / 2;
+
+                // 平底线段端点
+                const flatA = { x: flatCenterX - halfFlat * perpX, y: flatCenterY - halfFlat * perpY };
+                const flatB = { x: flatCenterX + halfFlat * perpX, y: flatCenterY + halfFlat * perpY };
+
+                // ----- 绘制平底（亮黄色线段）-----
+                camCtx.beginPath();
+                camCtx.moveTo(flatA.x, flatA.y);
+                camCtx.lineTo(flatB.x, flatB.y);
+                camCtx.strokeStyle = '#f1c40f';
+                camCtx.lineWidth = 3;
+                camCtx.stroke();
+
+                // ----- 绘制推杆杆身（沿导路反方向延伸，表示推杆）-----
+                const rodStartX = flatCenterX + FOLLOWER_VISIBLE_LEN * SCALE * dirX;
+                const rodStartY = flatCenterY + FOLLOWER_VISIBLE_LEN * SCALE * dirY;
+                const rodEndX = flatCenterX; // 杆身连接到平底中心
+                const rodEndY = flatCenterY;
+                camCtx.beginPath();
+                camCtx.moveTo(rodStartX, rodStartY);
+                camCtx.lineTo(rodEndX, rodEndY);
+                camCtx.strokeStyle = '#3498db';
+                camCtx.lineWidth = 12;
+                camCtx.stroke();
+
+                // 平底块（矩形，表示厚度）
+                const thickness = 4;
+                const flatBlockP1 = { x: flatCenterX - halfFlat * perpX - thickness * dirX, y: flatCenterY - halfFlat * perpY - thickness * dirY };
+                const flatBlockP2 = { x: flatCenterX + halfFlat * perpX - thickness * dirX, y: flatCenterY + halfFlat * perpY - thickness * dirY };
+                const flatBlockP3 = { x: flatCenterX + halfFlat * perpX, y: flatCenterY + halfFlat * perpY };
+                const flatBlockP4 = { x: flatCenterX - halfFlat * perpX, y: flatCenterY - halfFlat * perpY };
+                camCtx.fillStyle = '#c9e2ef';
+                camCtx.shadowBlur = 4;
+                camCtx.beginPath();
+                camCtx.moveTo(flatBlockP1.x, flatBlockP1.y);
+                camCtx.lineTo(flatBlockP2.x, flatBlockP2.y);
+                camCtx.lineTo(flatBlockP3.x, flatBlockP3.y);
+                camCtx.lineTo(flatBlockP4.x, flatBlockP4.y);
+                camCtx.closePath();
+                camCtx.fill();
+                camCtx.shadowBlur = 0;
+
+                // ----- 精确接触点（基于固定实际轮廓）-----
+                const contact = computeContactPoint(fixedCamPoints, flatA, flatB);
+                camCtx.beginPath();
+                camCtx.arc(contact.x, contact.y, 8, 0, 2 * Math.PI);
+                camCtx.fillStyle = '#f1c40f';
+                camCtx.shadowBlur = 8;
+                camCtx.fill();
+                camCtx.shadowBlur = 0;
+
+                // 法线（压力角0°：沿导路方向向外）
+                camCtx.beginPath();
+                camCtx.moveTo(contact.x, contact.y);
+                camCtx.lineTo(contact.x + 30 * dirX, contact.y + 30 * dirY);
+                camCtx.strokeStyle = '#ff8c42';
+                camCtx.lineWidth = 2.5;
+                camCtx.stroke();
+                // 箭头
+                const arrowTipX = contact.x + 38 * dirX;
+                const arrowTipY = contact.y + 38 * dirY;
+                const arrowBackX = contact.x + 28 * dirX;
+                const arrowBackY = contact.y + 28 * dirY;
+                camCtx.beginPath();
+                camCtx.moveTo(arrowBackX - 5 * perpX, arrowBackY - 5 * perpY);
+                camCtx.lineTo(arrowTipX, arrowTipY);
+                camCtx.lineTo(arrowBackX + 5 * perpX, arrowBackY + 5 * perpY);
+                camCtx.fillStyle = '#ff8c42';
+                camCtx.fill();
+
+                // 压力角显示
+                pressureDisplay.textContent = '0.0°';
+
+                // ----- 角度刻度盘及指针（指示凸轮实际转角）-----
+                drawAngleScale(camCtx, BASE_RADIUS * SCALE * 1.3, currentCamAngle);
+
+                camCtx.restore(); // 恢复坐标系
+
+                // 屏幕坐标系文字标注
+                camCtx.save();
+                camCtx.font = 'bold 15px "Segoe UI"';
+                camCtx.fillStyle = '#1d546b';
+                camCtx.shadowBlur = 2;
+                camCtx.fillText(`凸轮转角: ${currentCamAngle.toFixed(1)}° (反转 -${currentCamAngle.toFixed(1)}°)`, 20, 50);
+                camCtx.fillText(`推杆位移: ${sCurr.toFixed(2)} mm`, 20, 90);
+                camCtx.restore();
+            }
+
+            // 绘制网格 (浅色)
+            function drawGrid(ctx, range) {
+                ctx.strokeStyle = 'rgba(90, 140, 160, 0.15)';
+                ctx.lineWidth = 0.6;
+                const step = 20 * SCALE;
+                for (let i = -range; i <= range; i += step) {
+                    ctx.beginPath();
+                    ctx.moveTo(-range, i);
+                    ctx.lineTo(range, i);
+                    ctx.stroke();
+                    ctx.moveTo(i, -range);
+                    ctx.lineTo(i, range);
+                    ctx.stroke();
+                }
+            }
+
+            // 角度刻度
+            function drawAngleScale(ctx, radius, currAngleDeg) {
+                ctx.strokeStyle = '#7faebe';
+                ctx.lineWidth = 1.2;
+                ctx.font = '12px "Segoe UI"';
+                ctx.fillStyle = '#236277';
+                for (let deg = 0; deg < 360; deg += 30) {
+                    const rad = deg2rad(-deg);
+                    const x = radius * 1.1 * Math.sin(rad);
+                    const y = radius * 1.1 * Math.cos(rad);
+                    if (deg % 90 === 0) {
+                        ctx.fillText(deg + '°', x, y + (deg===0?15:0));
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(radius * 0.95 * Math.sin(rad), radius * 0.95 * Math.cos(rad));
+                    ctx.lineTo(radius * 1.05 * Math.sin(rad), radius * 1.05 * Math.cos(rad));
+                    ctx.stroke();
+                }
+                // 指针（指示凸轮实际转角）
+                const radCurr = deg2rad(currAngleDeg); 
+                ctx.beginPath();
+                ctx.moveTo(0,0);
+                ctx.lineTo(radius * 1.2 * Math.sin(radCurr), radius * 1.2 * Math.cos(radCurr));
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            // ---------- 运动线图绘制 (位移、速度、加速度) ----------
+            function drawMotionCurves() {
+                const w = motionCanvas.width, h = motionCanvas.height;
+                motionCtx.clearRect(0,0,w,h);
+                motionCtx.fillStyle = '#ffffff';
+                motionCtx.fillRect(0,0,w,h);
+                const pad = 50;
+                const graphW = w - 2*pad;
+                const graphH = h - 2*pad;
+
+                motionCtx.strokeStyle = '#6fa3b3';
+                motionCtx.lineWidth = 1.8;
+                motionCtx.beginPath();
+                motionCtx.moveTo(pad, pad); motionCtx.lineTo(pad, h-pad);
+                motionCtx.moveTo(pad, h-pad); motionCtx.lineTo(w-pad, h-pad);
+                motionCtx.stroke();
+
+                motionCtx.fillStyle = '#1f6a82';
+                motionCtx.font = '11px Arial';
+                motionCtx.fillText('0°', pad-15, h-pad+20);
+                motionCtx.fillText('360°', w-pad-30, h-pad+20);
+                motionCtx.fillText('s(mm)', pad-35, pad-5);
+                motionCtx.fillText('v', w-pad+15, pad+10);
+                motionCtx.fillText('a', w-pad+15, pad+30);
+
+                const steps = 360;
+                const sData = [], vData = [], aData = [];
+                for (let deg = 0; deg <= steps; deg++) {
+                    const res = getDisplacementAndDerivative(deg, LIFT, phi1, phi2, phi3, phi4, currentLaw);
+                    const ds_dphi = res.ds_dphi;
+                    const ds_drad = ds_dphi * (180/Math.PI);
+                    const v = ds_drad * OMEGA;
+                    let d2s = 0;
+                    if (deg > 0 && deg < steps) {
+                        const prev = getDisplacementAndDerivative(deg-1, LIFT, phi1, phi2, phi3, phi4, currentLaw);
+                        const next = getDisplacementAndDerivative(deg+1, LIFT, phi1, phi2, phi3, phi4, currentLaw);
+                        d2s = (next.ds_dphi - prev.ds_dphi) / 2;
+                    }
+                    const d2s_rad = d2s * (180/Math.PI) * (180/Math.PI);
+                    const a = d2s_rad * OMEGA * OMEGA;
+                    sData.push(res.s);
+                    vData.push(v);
+                    aData.push(a);
+                }
+
+                const maxS = LIFT;
+                const maxV = Math.max(...vData.map(Math.abs)) * 1.1 || 30;
+                const maxA = Math.max(...aData.map(Math.abs)) * 1.1 || 200;
+
+                // 位移
+                motionCtx.beginPath();
+                motionCtx.strokeStyle = '#1e88b5';
+                motionCtx.lineWidth = 2.5;
+                for (let i = 0; i <= steps; i+=2) {
+                    const x = pad + (i/steps) * graphW;
+                    const y = h - pad - (sData[i] / maxS) * graphH;
+                    if (i===0) motionCtx.moveTo(x,y); else motionCtx.lineTo(x,y);
+                }
+                motionCtx.stroke();
+
+                // 速度
+                motionCtx.beginPath();
+                motionCtx.strokeStyle = '#2e7d32';
+                motionCtx.lineWidth = 2;
+                for (let i = 0; i <= steps; i+=2) {
+                    const x = pad + (i/steps) * graphW;
+                    const y = h - pad - (vData[i] / maxV) * graphH * 0.3 - graphH*0.2;
+                    if (i===0) motionCtx.moveTo(x,y); else motionCtx.lineTo(x,y);
+                }
+                motionCtx.stroke();
+
+                // 加速度
+                motionCtx.beginPath();
+                motionCtx.strokeStyle = '#f39c12';
+                motionCtx.lineWidth = 2;
+                for (let i = 0; i <= steps; i+=2) {
+                    const x = pad + (i/steps) * graphW;
+                    const y = h - pad - (aData[i] / maxA) * graphH * 0.3 - graphH*0.5;
+                    if (i===0) motionCtx.moveTo(x,y); else motionCtx.lineTo(x,y);
+                }
+                motionCtx.stroke();
+
+                motionCtx.fillStyle = '#0f4d66';
+                motionCtx.font = 'bold 12px Arial';
+                motionCtx.fillText('位移 s', w-140, pad+20);
+                motionCtx.fillStyle = '#2e7d32';
+                motionCtx.fillText('速度 v', w-140, pad+45);
+                motionCtx.fillStyle = '#f39c12';
+                motionCtx.fillText('加速度 a', w-140, pad+70);
+            }
+
+            // ---------- 动画循环（反转运动）---------
+            function animate(timestamp) {
+                if (!isAnimating) return;
+                if (lastTimestamp === 0) lastTimestamp = timestamp;
+                const delta = (timestamp - lastTimestamp) / 1000;
+                lastTimestamp = timestamp;
+                currentCamAngle += OMEGA * delta * (180 / Math.PI);
+                if (currentCamAngle >= 360) currentCamAngle -= 360;
+                camAngleInput.value = Math.round(currentCamAngle);
+                drawAll();
+                animFrameId = requestAnimationFrame(animate);
+            }
+
+            // 启动/暂停/重置
+            startAnimBtn.addEventListener('click', function(){
+                if (!isAnimating) {
+                    isAnimating = true;
+                    lastTimestamp = 0;
+                    animFrameId = requestAnimationFrame(animate);
+                }
+            });
+            pauseAnimBtn.addEventListener('click', function(){
+                isAnimating = false;
+                if (animFrameId) cancelAnimationFrame(animFrameId);
+            });
+            resetBtn.addEventListener('click', function(){
+                isAnimating = false;
+                if (animFrameId) cancelAnimationFrame(animFrameId);
+                currentCamAngle = 0;
+                camAngleInput.value = 0;
+                drawAll();
+                drawMotionCurves();
+            });
+
+            // 应用指定凸轮转角
+            applyAngleBtn.addEventListener('click', function(){
+                let val = parseFloat(camAngleInput.value);
+                if (isNaN(val)) val = 0;
+                if (val < 0) val = 0;
+                if (val > 360) val = 360;
+                currentCamAngle = val;
+                camAngleInput.value = val;
+                drawAll();
+            });
+
+            // 画布尺寸自适应
+            function resizeCanvases() {
+                const container = camCanvas.parentElement;
+                camCanvas.width = container.clientWidth;
+                camCanvas.height = container.clientHeight;
+                motionCanvas.width = motionCanvas.parentElement.clientWidth;
+                motionCanvas.height = 180;
+                drawAll();
+                drawMotionCurves();
+            }
+            window.addEventListener('resize', resizeCanvases);
+            resizeCanvases();
+
+            // 初次绘制
+            updatePhi4FromOthers();
+            drawAll();
+            drawMotionCurves();
+        })();
+    </script>
+</body>
+</html>
