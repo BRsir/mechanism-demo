@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>机械原理：曲柄摇块机构 · 速度/加速度分析</title>
+    <style>
+        :root {
+            /* 统一主题体系 - 工程蓝 */
+            --primary-color: #1a2980;
+            --accent-color: #26d0ce;
+            --bg-color: #f4f7f9;
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+            flex: 1;
+        }
+
+        /* --- 顶部信息区 (完美还原原版文本和结构) --- */
+        header {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        h1 small {
+            font-size: 0.9rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: 400;
+            white-space: nowrap;
+        }
+        
+        .sub {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            line-height: 1.5;
+            border-left: 4px solid #ffb347; /* 保留原版的橙色强调 */
+        }
+
+        /* --- 主内容区 (弹性分栏) --- */
+        .main-content {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 左侧：Canvas 仿真视图 */
+        .simulation-container {
+            flex: 2;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            min-height: 400px;
+            border-radius: 12px;
+            background: #fefcf5; /* 保持原画风背景底色 */
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 右侧：控制与数据看板 */
+        .control-container {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            padding: 20px;
+            overflow-y: auto;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-container h2 {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin: 0 0 5px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px dashed #cbd5e1;
+        }
+
+        /* 滑块控制区 */
+        .slider-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .slider-box label {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .slider-control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #cbd5e1;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ffb347; /* 保留原版的橙色滑块 */
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            border: 2px solid white;
+        }
+
+        .angle-display {
+            background: var(--primary-color);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        /* 数据看板 Grid */
+        .data-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 5px;
+        }
+
+        .data-card {
+            background: #f1f5f9;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .data-label {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .data-label .hint {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            font-weight: normal;
+        }
+
+        .data-value-group {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+        .data-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            font-family: 'Courier New', monospace;
+        }
+        .data-unit { font-size: 0.8rem; color: var(--text-sub); }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 5px;
+        }
+        .btn:hover { background: var(--primary-color); color: white; }
+        .btn:active { transform: scale(0.98); }
+
+        .footnote {
+            margin-top: auto;
+            color: var(--text-sub);
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            border: 1px dashed #cbd5e1;
+        }
+
+        /* --- 响应式断点 --- */
+        @media (max-width: 900px) {
+            body { height: auto; min-height: 100vh; }
+            .main-content { flex-direction: column; }
+            .canvas-wrapper { min-height: 60vw; max-height: 400px; }
+            .control-container { min-width: 100%; overflow: visible; }
+            h1 { font-size: 1.3rem; }
+            h1 small { font-size: 0.8rem; }
+            .data-board { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .data-board { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>⚙️ 曲柄摇块机构 · 速度/加速度分析 <small>滑块摇杆 | B₃点速度/加速度</small></h1>
+            <div class="sub">🔧 已知：曲柄AB=80mm，机架AC=150mm，摇杆长度取250mm（显示），曲柄角速度ω₁=2 rad/s (逆时针)</div>
+        </header>
+
+        <div class="main-content">
+            <div class="simulation-container">
+                <div class="canvas-wrapper">
+                    <canvas id="mechanismCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="control-container">
+                <h2>📐 位置控制与分析</h2>
+                
+                <div class="slider-box">
+                    <label>🎚️ 曲柄转角 φ₁ (°)</label>
+                    <div class="slider-control-group">
+                        <input type="range" id="angleSlider" min="0" max="360" value="0" step="1">
+                        <div class="angle-display" id="angleDisplay">0°</div>
+                    </div>
+                </div>
+
+                <div class="data-board">
+                    <div class="data-card">
+                        <span class="data-label">📍 B₃点速度 v<sub>B3</sub> <br><span class="hint">(与水平夹角)</span></span>
+                        <div class="data-value-group">
+                            <span class="data-value" id="speedVal">0.00</span>
+                            <span class="data-unit">mm/s</span>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <span class="data-label">📐 速度方向角 <br><span class="hint">(逆时针为正)</span></span>
+                        <div class="data-value-group">
+                            <span class="data-value" id="speedAngle">0.0°</span>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <span class="data-label">⚡ 加速度 a<sub>B3</sub> <br><span class="hint">(与水平夹角)</span></span>
+                        <div class="data-value-group">
+                            <span class="data-value" id="accelVal">0.00</span>
+                            <span class="data-unit">mm/s²</span>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <span class="data-label">📐 加速度方向角 <br><span class="hint">(逆时针为正)</span></span>
+                        <div class="data-value-group">
+                            <span class="data-value" id="accelAngle">0.0°</span>
+                        </div>
+                    </div>
+                    <div class="data-card" style="border-left-color: #f59e0b; background: #fffbeb;">
+                        <span class="data-label">🌀 科氏加速度 a<sub>k</sub></span>
+                        <div class="data-value-group">
+                            <span class="data-value" id="coriolisVal" style="color:#b45309">0.00</span>
+                            <span class="data-unit">mm/s²</span>
+                        </div>
+                    </div>
+                    <div class="data-card" style="border-left-color: #f59e0b; background: #fffbeb;">
+                        <span class="data-label">📏 相对速度 v<sub>r</sub></span>
+                        <div class="data-value-group">
+                            <span class="data-value" id="relVelVal" style="color:#b45309">0.00</span>
+                            <span class="data-unit">mm/s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn" id="resetZeroBtn">⏪ 复位至 0°</button>
+
+                <div class="footnote">
+                    B₃点为摇杆上与滑块瞬时重合的点（即B点）<br>
+                    方向角为矢量与水平轴正方向的夹角，逆时针为正<br>
+                    红色箭头为B₃点速度矢量（长度按比例绘制）
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function() {
+    // ==========================================
+    //  核心机械原理逻辑 (严格保留原版所有数学与变量)
+    // ==========================================
+    const L1 = 80;       
+    const AC = 150;      
+    const L3_display = 250; 
+    const A = { x: 0, y: 0 };
+    const C = { x: AC, y: 0 };
+    const omega1 = 2;  
+
+    let result = {
+        phi1: 0, B: { x: 0, y: 0 }, r: 0, e_r: { x: 0, y: 0 }, e_t: { x: 0, y: 0 },
+        omega3: 0, v_rel: 0, alpha3: 0, a_rel: 0, vB3: { x: 0, y: 0 }, aB3: { x: 0, y: 0 }, a_k: { x: 0, y: 0 }
+    };
+
+    function degToRad(deg) { return deg * Math.PI / 180; }
+    function radToDeg(rad) { return rad * 180 / Math.PI; }
+
+    function analyze(phi1) {
+        const Bx = L1 * Math.cos(phi1);
+        const By = L1 * Math.sin(phi1);
+
+        const CBx = Bx - C.x;
+        const CBy = By - C.y;
+        const r = Math.hypot(CBx, CBy);
+        if (r < 1e-6) return false;  
+
+        const e_rx = CBx / r;
+        const e_ry = CBy / r;
+        const e_tx = -e_ry;
+        const e_ty = e_rx;
+
+        const vB2x = -omega1 * L1 * Math.sin(phi1);
+        const vB2y = omega1 * L1 * Math.cos(phi1);
+
+        const vB2_t = vB2x * e_tx + vB2y * e_ty;   
+        const vB2_r = vB2x * e_rx + vB2y * e_ry;   
+
+        const omega3 = vB2_t / r;                  
+        const v_rel = vB2_r;                        
+
+        const vB3x = omega3 * r * e_tx;
+        const vB3y = omega3 * r * e_ty;
+
+        const aB2x = -omega1 * omega1 * L1 * Math.cos(phi1);
+        const aB2y = -omega1 * omega1 * L1 * Math.sin(phi1);
+
+        const aB2_t = aB2x * e_tx + aB2y * e_ty;
+        const aB2_r = aB2x * e_rx + aB2y * e_ry;
+
+        const a_k_t = 2 * omega3 * v_rel;
+        const a_kx = a_k_t * e_tx;
+        const a_ky = a_k_t * e_ty;
+
+        const alpha3 = (aB2_t - a_k_t) / r;
+        const a_rel = aB2_r + omega3 * omega3 * r;
+
+        const aB3x = (alpha3 * e_tx - omega3 * omega3 * e_rx) * r;
+        const aB3y = (alpha3 * e_ty - omega3 * omega3 * e_ry) * r;
+
+        result = {
+            phi1: phi1, B: { x: Bx, y: By }, r: r, e_r: { x: e_rx, y: e_ry }, e_t: { x: e_tx, y: e_ty },
+            omega3: omega3, v_rel: v_rel, alpha3: alpha3, a_rel: a_rel,
+            vB3: { x: vB3x, y: vB3y }, aB3: { x: aB3x, y: aB3y }, a_k: { x: a_kx, y: a_ky }
+        };
+        return true;
+    }
+
+    // ==========================================
+    //  UI 与 绘图逻辑 (支持自适应缩放，绘图原封不动)
+    // ==========================================
+    const canvas = document.getElementById('mechanismCanvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('angleSlider');
+    const angleDisplay = document.getElementById('angleDisplay');
+    const speedVal = document.getElementById('speedVal');
+    const speedAngle = document.getElementById('speedAngle');
+    const accelVal = document.getElementById('accelVal');
+    const accelAngle = document.getElementById('accelAngle');
+    const coriolisVal = document.getElementById('coriolisVal');
+    const relVelVal = document.getElementById('relVelVal');
+
+    let scaleFactor = 2.0;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        
+        const requiredWidth = 500; 
+        const requiredHeight = 400;
+        
+        scaleFactor = Math.min(canvas.width / requiredWidth, canvas.height / requiredHeight) * 1.5;
+        offsetX = canvas.width * 0.35;
+        offsetY = canvas.height * 0.55;
+        
+        draw();
+    }
+
+    function draw() {
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.strokeStyle = "#e9eef5";
+        ctx.lineWidth = 0.8;
+        for (let i = 0; i < width; i += 25) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.strokeStyle = "#d0d9e8"; ctx.stroke(); }
+        for (let i = 0; i < height; i += 25) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke(); }
+        ctx.restore();
+
+        function scale(p) {
+            return { x: offsetX + p.x * scaleFactor, y: offsetY + p.y * scaleFactor };
+        }
+
+        const A_scaled = scale(A);
+        const C_scaled = scale(C);
+        const B_scaled = scale(result.B);
+
+        const E = {
+            x: C.x + L3_display * result.e_r.x,
+            y: C.y + L3_display * result.e_r.y
+        };
+        const E_scaled = scale(E);
+
+        ctx.shadowColor = '#00000030';
+        ctx.shadowBlur = 10;
+
+        ctx.beginPath();
+        ctx.moveTo(A_scaled.x, A_scaled.y);
+        ctx.lineTo(C_scaled.x, C_scaled.y);
+        ctx.strokeStyle = "#9aaec9";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.shadowBlur = 15;
+        ctx.beginPath(); ctx.arc(A_scaled.x, A_scaled.y, 12, 0, 2*Math.PI);
+        ctx.fillStyle = "#2d3142"; ctx.fill();
+        ctx.strokeStyle = "#f0e9d8"; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = "white"; ctx.font = "bold 16px 'Segoe UI'";
+        ctx.fillText("A", A_scaled.x - 25, A_scaled.y - 18);
+
+        ctx.beginPath(); ctx.arc(C_scaled.x, C_scaled.y, 12, 0, 2*Math.PI);
+        ctx.fillStyle = "#2d3142"; ctx.fill();
+        ctx.strokeStyle = "#f0e9d8"; ctx.stroke();
+        ctx.fillText("C", C_scaled.x - 20, C_scaled.y - 18);
+
+        ctx.beginPath();
+        ctx.moveTo(A_scaled.x, A_scaled.y);
+        ctx.lineTo(B_scaled.x, B_scaled.y);
+        ctx.strokeStyle = "#e63946";
+        ctx.lineWidth = 6;
+        ctx.shadowColor = "#b71c1c";
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(C_scaled.x, C_scaled.y);
+        ctx.lineTo(E_scaled.x, E_scaled.y);
+        ctx.strokeStyle = "#f4a261";
+        ctx.lineWidth = 5;
+        ctx.shadowColor = "#b45f2a";
+        ctx.stroke();
+
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = "#d4a373";
+        ctx.fillRect(B_scaled.x - 12, B_scaled.y - 12, 24, 24);
+        ctx.strokeStyle = "#936e38";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(B_scaled.x - 12, B_scaled.y - 12, 24, 24);
+
+        ctx.beginPath(); ctx.arc(B_scaled.x, B_scaled.y, 8, 0, 2*Math.PI);
+        ctx.fillStyle = "#1d3557"; ctx.fill();
+        ctx.strokeStyle = "#f8f4e9"; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.fillStyle = "#1e293b"; ctx.font = "bold 14px 'Segoe UI'";
+        ctx.fillText("B (B₂/B₃)", B_scaled.x - 40, B_scaled.y - 25);
+
+        ctx.font = "bold 18px 'Segoe UI'";
+        ctx.fillStyle = "#b71c1c";
+        ctx.shadowBlur = 0;
+        ctx.fillText("1", (A_scaled.x + B_scaled.x)/2 + 10, (A_scaled.y + B_scaled.y)/2 - 10);
+
+        ctx.fillStyle = "#936e38";
+        ctx.fillText("2", B_scaled.x - 30, B_scaled.y - 30);
+
+        ctx.fillStyle = "#b45f2a";
+        ctx.fillText("3", (C_scaled.x + E_scaled.x)/2 + 10, (C_scaled.y + E_scaled.y)/2 - 10);
+
+        const vx = result.vB3.x;
+        const vy = result.vB3.y;
+        const vMag = Math.hypot(vx, vy);
+        if (vMag > 0.1) {
+            const arrowScale = 0.5; 
+            const arrowLen = vMag * arrowScale;
+            const dirX = vx / vMag;
+            const dirY = vy / vMag;
+
+            const startX = B_scaled.x;
+            const startY = B_scaled.y;
+            const endX = startX + dirX * arrowLen;
+            const endY = startY + dirY * arrowLen;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = "#ff0000";
+            ctx.lineWidth = 4;
+            ctx.shadowColor = "#aa0000";
+            ctx.stroke();
+
+            const arrowHeadSize = 16;
+            const angle = Math.atan2(dirY, dirX);
+            const leftX = endX - arrowHeadSize * 0.8 * Math.cos(angle - 0.5);
+            const leftY = endY - arrowHeadSize * 0.8 * Math.sin(angle - 0.5);
+            const rightX = endX - arrowHeadSize * 0.8 * Math.cos(angle + 0.5);
+            const rightY = endY - arrowHeadSize * 0.8 * Math.sin(angle + 0.5);
+
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(leftX, leftY);
+            ctx.lineTo(rightX, rightY);
+            ctx.closePath();
+            ctx.fillStyle = "#ff0000";
+            ctx.shadowBlur = 8;
+            ctx.fill();
+
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#a00000";
+            ctx.shadowBlur = 0;
+            ctx.fillText("v_B3", endX + 8, endY - 8);
+        }
+    }
+
+    function updateUI() {
+        const phi1deg = radToDeg(result.phi1) % 360;
+        angleDisplay.innerText = phi1deg.toFixed(1) + '°';
+
+        const vMag = Math.hypot(result.vB3.x, result.vB3.y);
+        const vAng = radToDeg(Math.atan2(result.vB3.y, result.vB3.x));
+        speedVal.innerText = vMag.toFixed(2);
+        speedAngle.innerText = vAng.toFixed(1) + '°';
+
+        const aMag = Math.hypot(result.aB3.x, result.aB3.y);
+        const aAng = radToDeg(Math.atan2(result.aB3.y, result.aB3.x));
+        accelVal.innerText = aMag.toFixed(2);
+        accelAngle.innerText = aAng.toFixed(1) + '°';
+
+        const corMag = Math.hypot(result.a_k.x, result.a_k.y);
+        coriolisVal.innerText = corMag.toFixed(2);
+        relVelVal.innerText = Math.abs(result.v_rel).toFixed(2);
+    }
+
+    function onSliderChange() {
+        const phi1deg = parseInt(slider.value);
+        const phi1 = degToRad(phi1deg);
+        if (analyze(phi1)) {
+            draw();
+            updateUI();
+        }
+    }
+
+    slider.addEventListener('input', onSliderChange);
+    document.getElementById('resetZeroBtn').addEventListener('click', () => {
+        slider.value = 0;
+        onSliderChange();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function init() {
+        slider.value = 0;
+        resizeCanvas();
+        onSliderChange();
+    }
+    
+    setTimeout(init, 50);
+
+})();
+</script>
+</body>
+</html>

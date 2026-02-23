@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>平底推杆凸轮 · 反转法可视化 · 实际/理论轮廓</title>
+    <script src="https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* 统一“工程蓝” UI 规范 */
+            --primary-color: #1a2980;
+            --accent-color: #26d0ce;
+            --bg-color: #f4f7f9;
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            
+            /* 状态强调色 */
+            --status-blue: #3498db;
+            --status-orange: #e67e22;
+            --status-red: #e74c3c;
+            --status-green: #2ecc71;
+            --status-gray: #95a5a6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+        }
+
+        /* --- 顶部标题区域 --- */
+        header {
+            background: var(--panel-bg);
+            padding: 20px 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            border-left: 5px solid var(--primary-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.3;
+            margin: 0;
+        }
+
+        .sub {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        /* --- 主内容区 (弹性双栏) --- */
+        .row {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 左侧：Canvas 仿真区域 */
+        .canvas-area {
+            flex: 2;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .canvas-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .cam-canvas-box {
+            flex: 1;
+            background: #fcfdfd;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            min-height: 380px;
+        }
+
+        .motion-canvas-container {
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .motion-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            align-items: center;
+        }
+
+        .motion-canvas-box {
+            height: 140px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-sub);
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* 右侧：控制面板 */
+        .control-panel {
+            flex: 1;
+            min-width: 340px;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .panel-group-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 参数网格 */
+        .param-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .param-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .val-badge {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* 滑块样式 */
+        input[type=range] {
+            width: 100%;
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            margin: 5px 0;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]:disabled {
+            opacity: 0.5;
+        }
+        input[type=range]:disabled::-webkit-slider-thumb {
+            background: var(--text-sub);
+            cursor: not-allowed;
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: var(--status-orange);
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        /* 凸轮转角精准输入区 & 压力角 */
+        .angle-input-area {
+            background: #f0fdfa;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #ccfbf1;
+            border-left: 4px solid var(--status-green);
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            flex: 1.5;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 1rem;
+            font-family: monospace;
+            outline: none;
+            text-align: center;
+        }
+        
+        .update-btn {
+            flex: 1;
+            padding: 8px;
+            background: var(--status-green);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .pressure-angle-box {
+            background: #fffbeb;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid var(--status-orange);
+            border-top: 1px solid #fde68a;
+            border-right: 1px solid #fde68a;
+            border-bottom: 1px solid #fde68a;
+        }
+
+        .pressure-header {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pressure-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #b45309;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* 按钮 */
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 5px;
+        }
+        button {
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        
+        #playBtn { background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); color: white; }
+        #pauseBtn { background: var(--status-orange); color: white; }
+        #resetBtn { background: var(--status-red); color: white; }
+
+        /* --- 底部原理说明区 --- */
+        .info-panel {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            padding: 25px;
+        }
+
+        .info-panel p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        /* 运动规律选择按钮 */
+        .law-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .law-btn {
+            flex: 1;
+            padding: 10px 5px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            color: var(--text-sub);
+            font-weight: 600;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .law-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 10px rgba(26, 41, 128, 0.2);
+        }
+
+        /* 底部说明 footer-panel */
+        .footer-panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 15px 20px;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            border: 1px dashed var(--border-color);
+        }
+
+        /* --- 响应式适配 --- */
+        @media (max-width: 1024px) {
+            .row { flex-direction: column; gap: 15px; }
+            .control-panel { min-width: 100%; }
+            .canvas-area { padding: 15px; }
+            .cam-canvas-box { min-height: 60vw; max-height: 450px; }
+            h1 { font-size: 1.4rem; }
+        }
+
+        @media (max-width: 600px) {
+            .main-wrapper { padding: 10px; gap: 10px; }
+            header, .canvas-area, .control-panel, .info-panel { padding: 15px; }
+            .param-grid { grid-template-columns: 1fr; }
+            .btn-group { grid-template-columns: 1fr; }
+            .input-group { flex-wrap: wrap; }
+            .input-group label { flex-basis: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <header>
+        <h1><i class="fas fa-cogs"></i> 平底推杆凸轮 · 反转法可视化 · 实际/理论轮廓</h1>
+        <div class="sub">
+            <span>动态展示平底推杆凸轮的包络过程与运动学规律</span>
+        </div>
+    </header>
+
+    <div class="row">
+        <div class="canvas-area">
+            <div class="section-title"><i class="fas fa-tv"></i> 凸轮轮廓与运动分析视图</div>
+            
+            <div class="canvas-group">
+                <div class="cam-canvas-box">
+                    <canvas id="camCanvas"></canvas>
+                </div>
+                
+                <div class="motion-canvas-container">
+                    <div class="motion-header">
+                        <span><i class="fas fa-chart-line"></i> 推杆运动线图 (ω = 1.5 rad/s)</span>
+                        <span id="curveLawName" style="color:var(--accent-color);">正弦加速度</span>
+                    </div>
+                    <div class="motion-canvas-box">
+                        <canvas id="motionCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item"><span class="dot" style="background:#2c3e50;"></span> 基圆 (R₀=50)</div>
+                <div class="legend-item"><span class="dot" style="background:#e74c3c;"></span> 实际廓线(包络线)</div>
+                <div class="legend-item"><span class="dot" style="background:#2ecc71;"></span> 理论廓线(中心轨迹)</div>
+                <div class="legend-item"><span class="dot" style="background:#3498db;"></span> 平底推杆(反转位置)</div>
+                <div class="legend-item"><span class="dot" style="background:#f1c40f;"></span> 接触点/法线</div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="section-title"><i class="fas fa-wave-square"></i> 运动规律</div>
+            <div class="law-selector" id="lawSelector">
+                <button id="lawSine" class="law-btn active">正弦加速度</button>
+                <button id="lawCosine" class="law-btn">余弦加速度</button>
+                <button id="lawConstAcc" class="law-btn">等加速等减速</button>
+            </div>
+
+            <div class="panel-group-title"><i class="fas fa-ruler-combined"></i> 机构尺寸参数</div>
+            <div class="param-grid">
+                <div class="param-item">
+                    <div class="slider-label"><span>基圆半径 r0</span><span id="r0Val" class="val-badge">40</span></div>
+                    <input type="range" id="r0Slider" min="20" max="80" value="40">
+                </div>
+                <div class="param-item">
+                    <div class="slider-label"><span>升程 h</span><span id="hVal" class="val-badge">20</span></div>
+                    <input type="range" id="hSlider" min="10" max="50" value="20">
+                </div>
+                <div class="param-item" style="grid-column: 1 / -1;">
+                    <div class="slider-label"><span>偏距 e (影响理论廓线)</span><span id="eVal" class="val-badge">0</span></div>
+                    <input type="range" id="eSlider" min="-30" max="30" value="0">
+                </div>
+            </div>
+
+            <div class="panel-group-title" style="margin-top:5px;"><i class="fas fa-chart-pie"></i> 运动角度分布</div>
+            <div class="slider-panel">
+                <div class="slider-panel-title">运动角调节 (总和360°)</div>
+                
+                <div class="slider-item">
+                    <div class="slider-header">
+                        <span class="slider-label">推程升角 Φ₁</span>
+                        <span class="slider-value" id="phi1Val" style="color:var(--status-red)">150°</span>
+                    </div>
+                    <input type="range" id="phi1Slider" min="20" max="300" value="150" step="1">
+                </div>
+                
+                <div class="slider-item">
+                    <div class="slider-header">
+                        <span class="slider-label">远休止角 Φ₂</span>
+                        <span class="slider-value" id="phi2Val" style="color:var(--status-gray)">30°</span>
+                    </div>
+                    <input type="range" id="phi2Slider" min="0" max="180" value="30" step="1">
+                </div>
+                
+                <div class="slider-item">
+                    <div class="slider-header">
+                        <span class="slider-label">回程角 Φ₃</span>
+                        <span class="slider-value" id="phi3Val" style="color:var(--status-green)">90°</span>
+                    </div>
+                    <input type="range" id="phi3Slider" min="20" max="300" value="90" step="1">
+                </div>
+                
+                <div class="slider-item" style="margin-bottom:0;">
+                    <div class="slider-header">
+                        <span class="slider-label">近休止角 Φ₄</span>
+                        <span class="slider-value" id="phi4Val">90°</span>
+                    </div>
+                    <input type="range" id="phi4Slider" min="0" max="360" value="90" step="1" disabled>
+                </div>
+                <div class="note">* 调节前三角，近休止自动补足360°</div>
+            </div>
+
+            <div class="angle-input-area">
+                <div class="input-group">
+                    <label><i class="fas fa-crosshairs"></i> 指定凸轮转角(°)</label>
+                    <input type="number" id="camAngleInput" min="0" max="360" value="0" step="5">
+                    <button class="update-btn" id="applyAngleBtn">应用</button>
+                </div>
+                
+                <div class="pressure-angle-box">
+                    <div class="pressure-header"><i class="fas fa-drafting-compass"></i> 压力角 α (平底推杆)</div>
+                    <div class="pressure-value" id="pressureDisplay">0.0°</div>
+                    <div style="font-size:0.85rem; color:#b45309; margin-top:5px; font-weight:600;">平底法线=运动方向，恒为0°</div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button id="playBtn"><i class="fas fa-play"></i> 反转运动</button>
+                <button id="pauseBtn"><i class="fas fa-pause"></i> 暂停</button>
+                <button id="resetBtn"><i class="fas fa-redo"></i> 重置</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="section-title" style="border:none; margin-bottom:10px;"><i class="fas fa-book"></i> 平底推杆凸轮原理</div>
+        <p>1. <strong>反转法原理</strong>：假设凸轮静止，推杆以 -ω 绕凸轮轴心反转，同时按运动规律在导路上作相对移动。推杆平底在各个位置的直线族包络出了凸轮的<strong>实际廓线</strong>。</p>
+        <p>2. <strong>理论与实际廓线</strong>：理论廓线是推杆与平底交点（或参考点）的轨迹。实际廓线是平底直线的内包络线。</p>
+        <p>3. <strong>偏距 e 的影响</strong>：偏距 e 的改变会改变理论廓线的形状，但只要不发生运动干涉，平底推杆凸轮的<strong>实际廓线形状与偏距 e 无关</strong>（这是平底推杆的一个重要特性）。</p>
+    </div>
+
+    <div class="footer-panel">
+        <i class="fas fa-info-circle"></i> 反转法演示 · 凸轮固定，推杆反向旋转并移动 · 平底直线族包络形成轮廓 · 压力角恒0°
+    </div>
+</div>
+
+<script>
+    (function(){
+        "use strict";
+
+        // ==========================================
+        //  机械原理核心逻辑 (原封不动，绝对保留)
+        // ==========================================
+        
+        const BASE_RADIUS = 50;          
+        const LIFT = 16;                
+        const OMEGA = 1.5;              
+        let SCALE = 3.2;                
+        const FLAT_WIDTH = 36;          
+        const FOLLOWER_VISIBLE_LEN = 70; 
+        const PROFILE_STEP = 0.25;       
+
+        let phi1 = 150;   
+        let phi2 = 30;    
+        let phi3 = 90;    
+        let phi4 = 90;    
+
+        let currentLaw = 'sine';
+        let currentCamAngle = 0;  
+
+        let isAnimating = false;
+        let animFrameId = null;
+        let lastTimestamp = 0;
+
+        const camCanvas = document.getElementById('camCanvas');
+        const camCtx = camCanvas.getContext('2d');
+        const motionCanvas = document.getElementById('motionCanvas');
+        const motionCtx = motionCanvas.getContext('2d');
+
+        let r0 = 40; 
+        let h = 20;  
+        let e = 0;   
+
+        const r0Slider = document.getElementById('r0Slider'); const r0Val = document.getElementById('r0Val');
+        const hSlider = document.getElementById('hSlider');   const hVal = document.getElementById('hVal');
+        const eSlider = document.getElementById('eSlider');   const eVal = document.getElementById('eVal');
+        
+        const phi1Slider = document.getElementById('phi1Slider'); const phi1Val = document.getElementById('phi1Val');
+        const phi2Slider = document.getElementById('phi2Slider'); const phi2Val = document.getElementById('phi2Val');
+        const phi3Slider = document.getElementById('phi3Slider'); const phi3Val = document.getElementById('phi3Val');
+        const phi4Slider = document.getElementById('phi4Slider'); const phi4Val = document.getElementById('phi4Val');
+
+        const lawSineBtn = document.getElementById('lawSine');
+        const lawCosineBtn = document.getElementById('lawCosine');
+        const lawConstAccBtn = document.getElementById('lawConstAcc');
+        const curveLawName = document.getElementById('curveLawName');
+
+        const camAngleInput = document.getElementById('camAngleInput');
+        const applyAngleBtn = document.getElementById('applyAngleBtn');
+        const pressureDisplay = document.getElementById('pressureDisplay');
+
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function deg2rad(deg) { return deg * Math.PI / 180; }
+        function rad2deg(rad) { return rad * 180 / Math.PI; }
+
+        function updatePhi4FromOthers() {
+            phi4 = 360 - phi1 - phi2 - phi3;
+            if (phi4 < 0) {
+                phi3 = 360 - phi1 - phi2;
+                if (phi3 < 20) phi3 = 20;
+                phi4 = 360 - phi1 - phi2 - phi3;
+            }
+            if (phi4 > 360) phi4 = 360;
+            phi4Val.textContent = Math.round(phi4) + '°';
+            phi4Slider.value = Math.round(phi4);
+            phi1Val.textContent = phi1 + '°';
+            phi2Val.textContent = phi2 + '°';
+            phi3Val.textContent = phi3 + '°';
+        }
+
+        function syncParams() {
+            r0 = parseInt(r0Slider.value); r0Val.innerText = r0;
+            h = parseInt(hSlider.value);   hVal.innerText = h;
+            e = parseInt(eSlider.value);   eVal.innerText = e;
+            
+            phi1 = parseInt(phi1Slider.value); phi1Val.innerText = phi1 + '°';
+            phi2 = parseInt(phi2Slider.value); phi2Val.innerText = phi2 + '°';
+            phi3 = parseInt(phi3Slider.value); phi3Val.innerText = phi3 + '°';
+            
+            updatePhi4FromOthers();
+            regenerateCamProfile();
+            drawAll();
+            drawMotionCurves();
+        }
+
+        r0Slider.addEventListener('input', syncParams);
+        hSlider.addEventListener('input', syncParams);
+        eSlider.addEventListener('input', syncParams);
+        phi1Slider.addEventListener('input', syncParams);
+        phi2Slider.addEventListener('input', syncParams);
+        phi3Slider.addEventListener('input', syncParams);
+
+        lawSineBtn.addEventListener('click', function() {
+            setActiveLaw('sine');
+            currentLaw = 'sine';
+            curveLawName.textContent = '正弦加速度';
+            regenerateCamProfile();
+            drawAll();
+            drawMotionCurves();
+        });
+        lawCosineBtn.addEventListener('click', function() {
+            setActiveLaw('cosine');
+            currentLaw = 'cosine';
+            curveLawName.textContent = '余弦加速度';
+            regenerateCamProfile();
+            drawAll();
+            drawMotionCurves();
+        });
+        lawConstAccBtn.addEventListener('click', function() {
+            setActiveLaw('constAcc');
+            currentLaw = 'constAcc';
+            curveLawName.textContent = '等加速等减速';
+            regenerateCamProfile();
+            drawAll();
+            drawMotionCurves();
+        });
+
+        function setActiveLaw(law) {
+            [lawSineBtn, lawCosineBtn, lawConstAccBtn].forEach(btn => btn.classList.remove('active'));
+            if (law === 'sine') lawSineBtn.classList.add('active');
+            if (law === 'cosine') lawCosineBtn.classList.add('active');
+            if (law === 'constAcc') lawConstAccBtn.classList.add('active');
+        }
+
+        function getDisplacementAndDerivative(phiDeg, lift_h, ph1, ph2, ph3, ph4, law) {
+            const totalRise = lift_h;
+            let s = 0;
+            let ds_dphi = 0;
+            const phiStartRise = 0;
+            const phiEndRise = ph1;
+            const phiStartDwellTop = ph1;
+            const phiEndDwellTop = ph1 + ph2;
+            const phiStartFall = ph1 + ph2;
+            const phiEndFall = ph1 + ph2 + ph3;
+
+            if (phiDeg >= phiStartRise && phiDeg < phiEndRise) {
+                const phi = phiDeg - phiStartRise;
+                const beta = ph1;
+                if (law === 'sine') {
+                    s = totalRise * (phi / beta - Math.sin(2 * Math.PI * phi / beta) / (2 * Math.PI));
+                    ds_dphi = totalRise / beta * (1 - Math.cos(2 * Math.PI * phi / beta));
+                } else if (law === 'cosine') {
+                    s = totalRise / 2 * (1 - Math.cos(Math.PI * phi / beta));
+                    ds_dphi = (totalRise * Math.PI / (2 * beta)) * Math.sin(Math.PI * phi / beta);
+                } else if (law === 'constAcc') {
+                    const half = beta / 2;
+                    if (phi <= half) {
+                        s = 2 * totalRise * (phi / beta) * (phi / beta);
+                        ds_dphi = 4 * totalRise * phi / (beta * beta);
+                    } else {
+                        s = totalRise - 2 * totalRise * Math.pow((beta - phi) / beta, 2);
+                        ds_dphi = 4 * totalRise * (beta - phi) / (beta * beta);
+                    }
+                }
+            } else if (phiDeg >= phiStartDwellTop && phiDeg < phiEndDwellTop) {
+                s = totalRise;
+                ds_dphi = 0;
+            } else if (phiDeg >= phiStartFall && phiDeg < phiEndFall) {
+                const phi = phiDeg - phiStartFall;
+                const beta = ph3;
+                if (law === 'sine') {
+                    s = totalRise * (1 - phi / beta + Math.sin(2 * Math.PI * phi / beta) / (2 * Math.PI));
+                    ds_dphi = -totalRise / beta * (1 - Math.cos(2 * Math.PI * phi / beta));
+                } else if (law === 'cosine') {
+                    s = totalRise / 2 * (1 + Math.cos(Math.PI * phi / beta));
+                    ds_dphi = -(totalRise * Math.PI / (2 * beta)) * Math.sin(Math.PI * phi / beta);
+                } else if (law === 'constAcc') {
+                    const half = beta / 2;
+                    if (phi <= half) {
+                        s = totalRise - 2 * totalRise * (phi / beta) * (phi / beta);
+                        ds_dphi = -4 * totalRise * phi / (beta * beta);
+                    } else {
+                        s = 2 * totalRise * Math.pow((beta - phi) / beta, 2);
+                        ds_dphi = -4 * totalRise * (beta - phi) / (beta * beta);
+                    }
+                }
+            } else {
+                s = 0;
+                ds_dphi = 0;
+            }
+            return { s, ds_dphi };
+        }
+
+        let camProfileBase = [];      
+        let theoryProfileBase = [];   
+
+        function regenerateCamProfile() {
+            const camPoints = [];
+            const theoryPoints = [];
+            for (let phiDeg = 0; phiDeg <= 360; phiDeg += PROFILE_STEP) {
+                const res = getDisplacementAndDerivative(phiDeg, h, phi1, phi2, phi3, phi4, currentLaw);
+                const s = res.s;
+                let ds_dphi = res.ds_dphi;
+                const ds_drad = ds_dphi * (180 / Math.PI); 
+                const phiRad = deg2rad(phiDeg);
+                const rb = r0;
+                
+                const camX = (rb + s) * Math.sin(phiRad) + ds_drad * Math.cos(phiRad);
+                const camY = (rb + s) * Math.cos(phiRad) - ds_drad * Math.sin(phiRad);
+                camPoints.push({ x: camX, y: camY, phiDeg });
+                
+                const theoryX = (rb + s) * Math.sin(phiRad);
+                const theoryY = (rb + s) * Math.cos(phiRad);
+                theoryPoints.push({ x: theoryX, y: theoryY, phiDeg });
+            }
+            camProfileBase = camPoints;
+            theoryProfileBase = theoryPoints;
+        }
+
+        function closestPointOnSegment(p, a, b) {
+            const ab = { x: b.x - a.x, y: b.y - a.y };
+            const ap = { x: p.x - a.x, y: p.y - a.y };
+            const t = (ap.x * ab.x + ap.y * ab.y) / (ab.x * ab.x + ab.y * ab.y);
+            if (t < 0) return a;
+            if (t > 1) return b;
+            return { x: a.x + t * ab.x, y: a.y + t * ab.y };
+        }
+
+        function computeContactPoint(contourPoints, flatA, flatB) {
+            let minDist = Infinity;
+            let contact = { x: (flatA.x + flatB.x) / 2, y: (flatA.y + flatB.y) / 2 }; 
+            for (let pt of contourPoints) {
+                const proj = closestPointOnSegment(pt, flatA, flatB);
+                const dist = Math.hypot(pt.x - proj.x, pt.y - proj.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    contact = proj;
+                }
+            }
+            return contact;
+        }
+
+        function drawAll() {
+            if (!camCanvas.width || !camCanvas.height) return;
+            camCtx.clearRect(0, 0, camCanvas.width, camCanvas.height);
+
+            const centerX = camCanvas.width / 2;
+            const centerY = camCanvas.height / 2;
+
+            camCtx.save();
+            camCtx.translate(centerX, centerY);
+            camCtx.scale(1, -1);  
+
+            drawGrid(camCtx, SCALE * 120);
+
+            // 基圆
+            camCtx.beginPath();
+            camCtx.arc(0, 0, r0 * SCALE, 0, 2 * Math.PI);
+            camCtx.strokeStyle = '#2c3e50';
+            camCtx.lineWidth = 2.8;
+            camCtx.stroke();
+            camCtx.fillStyle = 'rgba(44,62,80,0.05)';
+            camCtx.fill();
+
+            // 实际轮廓
+            const fixedCamPoints = camProfileBase.map(p => ({ x: p.x * SCALE, y: p.y * SCALE }));
+            if (fixedCamPoints.length > 2) {
+                camCtx.beginPath();
+                camCtx.moveTo(fixedCamPoints[0].x, fixedCamPoints[0].y);
+                for (let i = 1; i < fixedCamPoints.length; i++) {
+                    camCtx.lineTo(fixedCamPoints[i].x, fixedCamPoints[i].y);
+                }
+                camCtx.closePath();
+                camCtx.strokeStyle = '#e74c3c';
+                camCtx.lineWidth = 3.2;
+                camCtx.stroke();
+                camCtx.fillStyle = 'rgba(231,76,60,0.08)';
+                camCtx.fill();
+            }
+
+            // 理论轮廓
+            const fixedTheoryPoints = theoryProfileBase.map(p => ({ x: p.x * SCALE, y: p.y * SCALE }));
+            if (fixedTheoryPoints.length > 2) {
+                camCtx.beginPath();
+                camCtx.setLineDash([5, 5]);
+                camCtx.moveTo(fixedTheoryPoints[0].x, fixedTheoryPoints[0].y);
+                for (let i = 1; i < fixedTheoryPoints.length; i++) {
+                    camCtx.lineTo(fixedTheoryPoints[i].x, fixedTheoryPoints[i].y);
+                }
+                camCtx.closePath();
+                camCtx.strokeStyle = '#2ecc71';
+                camCtx.lineWidth = 2.5;
+                camCtx.stroke();
+                camCtx.setLineDash([]);
+            }
+
+            // 中心点
+            camCtx.beginPath();
+            camCtx.arc(0, 0, 8, 0, 2 * Math.PI);
+            camCtx.fillStyle = '#1a2980';
+            camCtx.fill();
+
+            const thetaRad = deg2rad(currentCamAngle);
+            const dirX = Math.sin(thetaRad);
+            const dirY = Math.cos(thetaRad);  
+
+            const resCurr = getDisplacementAndDerivative(currentCamAngle, h, phi1, phi2, phi3, phi4, currentLaw);
+            const sCurr = resCurr.s;
+
+            const centerR = (r0 + sCurr) * SCALE;
+            const flatCenterX = centerR * dirX;
+            const flatCenterY = centerR * dirY;
+
+            const perpX = -dirY;
+            const perpY = dirX;
+            const halfFlat = (FLAT_WIDTH * SCALE) / 2;
+
+            const basePx = e * Math.cos(-thetaRad) - (r0 + sCurr) * Math.sin(-thetaRad);
+            const basePy = e * Math.sin(-thetaRad) + (r0 + sCurr) * Math.cos(-thetaRad);
+
+            // 修改平底定位逻辑以支持偏距e，应用旋转变换
+            const fDx = halfFlat * Math.cos(-thetaRad);
+            const fDy = halfFlat * Math.sin(-thetaRad);
+
+            const flatA = { x: basePx - fDx, y: basePy - fDy };
+            const flatB = { x: basePx + fDx, y: basePy + fDy };
+
+            // 平底
+            camCtx.beginPath();
+            camCtx.moveTo(flatA.x * SCALE, flatA.y * SCALE);
+            camCtx.lineTo(flatB.x * SCALE, flatB.y * SCALE);
+            camCtx.strokeStyle = '#3498db';
+            camCtx.lineWidth = 4;
+            camCtx.stroke();
+
+            // 推杆杆身
+            const guideDirX = -Math.sin(-thetaRad);
+            const guideDirY = Math.cos(-thetaRad);
+            const rodStartX = basePx * SCALE;
+            const rodStartY = basePy * SCALE;
+            const rodEndX = rodStartX + FOLLOWER_VISIBLE_LEN * SCALE * guideDirX; 
+            const rodEndY = rodStartY + FOLLOWER_VISIBLE_LEN * SCALE * guideDirY;
+
+            camCtx.beginPath();
+            camCtx.moveTo(rodStartX, rodStartY);
+            camCtx.lineTo(rodEndX, rodEndY);
+            camCtx.strokeStyle = '#3498db';
+            camCtx.lineWidth = 12;
+            camCtx.stroke();
+
+            // 接触点
+            const contact = computeContactPoint(fixedCamPoints, {x: flatA.x*SCALE, y: flatA.y*SCALE}, {x: flatB.x*SCALE, y: flatB.y*SCALE});
+            camCtx.beginPath();
+            camCtx.arc(contact.x, contact.y, 8, 0, 2 * Math.PI);
+            camCtx.fillStyle = '#f1c40f';
+            camCtx.shadowBlur = 8;
+            camCtx.fill();
+            camCtx.shadowBlur = 0;
+
+            // 法线
+            camCtx.beginPath();
+            camCtx.moveTo(contact.x, contact.y);
+            camCtx.lineTo(contact.x + 30 * guideDirX, contact.y + 30 * guideDirY);
+            camCtx.strokeStyle = '#f1c40f';
+            camCtx.lineWidth = 2.5;
+            camCtx.stroke();
+            
+            pressureDisplay.textContent = '0.0°';
+
+            drawAngleScale(camCtx, r0 * SCALE * 1.3, currentCamAngle);
+
+            camCtx.restore(); 
+
+            // 文字标注
+            camCtx.save();
+            camCtx.font = 'bold 15px "Segoe UI"';
+            camCtx.fillStyle = '#1a2980';
+            camCtx.shadowBlur = 2;
+            camCtx.fillText(`凸轮转角: ${currentCamAngle.toFixed(1)}° (反转 -${currentCamAngle.toFixed(1)}°)`, 20, 30);
+            camCtx.fillText(`推杆位移: ${sCurr.toFixed(2)} mm`, 20, 60);
+            camCtx.restore();
+        }
+
+        function drawGrid(ctx, range) {
+            ctx.strokeStyle = 'rgba(26, 41, 128, 0.08)';
+            ctx.lineWidth = 0.6;
+            const step = 20 * SCALE;
+            for (let i = -range; i <= range; i += step) {
+                ctx.beginPath();
+                ctx.moveTo(-range, i);
+                ctx.lineTo(range, i);
+                ctx.stroke();
+                ctx.moveTo(i, -range);
+                ctx.lineTo(i, range);
+                ctx.stroke();
+            }
+        }
+
+        function drawAngleScale(ctx, radius, currAngleDeg) {
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.2;
+            ctx.font = '12px "Segoe UI"';
+            ctx.fillStyle = '#1a2980';
+            for (let deg = 0; deg < 360; deg += 30) {
+                const rad = deg2rad(-deg);
+                const x = radius * 1.1 * Math.sin(rad);
+                const y = radius * 1.1 * Math.cos(rad);
+                if (deg % 90 === 0) {
+                    ctx.fillText(deg + '°', x, y + (deg===0?15:0));
+                }
+                ctx.beginPath();
+                ctx.moveTo(radius * 0.95 * Math.sin(rad), radius * 0.95 * Math.cos(rad));
+                ctx.lineTo(radius * 1.05 * Math.sin(rad), radius * 1.05 * Math.cos(rad));
+                ctx.stroke();
+            }
+            const radCurr = deg2rad(currAngleDeg); 
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(radius * 1.2 * Math.sin(radCurr), radius * 1.2 * Math.cos(radCurr));
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawMotionCurves() {
+            const w = motionCanvas.width, h = motionCanvas.height;
+            motionCtx.clearRect(0,0,w,h);
+            
+            const padX = Math.max(30, w * 0.05);
+            const padY = 20;
+            const graphW = w - 2*padX;
+            const graphH = h - 2*padY;
+
+            motionCtx.strokeStyle = '#e2e8f0';
+            motionCtx.lineWidth = 1.8;
+            motionCtx.beginPath();
+            motionCtx.moveTo(padX, h-padY);
+            motionCtx.lineTo(w-padX, h-padY);
+            motionCtx.stroke();
+
+            motionCtx.fillStyle = '#64748b';
+            motionCtx.font = '11px Arial';
+            motionCtx.fillText('0°', padX-10, h-5);
+            motionCtx.fillText('360°', w-padX-25, h-5);
+            motionCtx.fillText('s(mm)', 5, padY);
+
+            const steps = 360;
+            const sData = [];
+            for (let deg = 0; deg <= steps; deg++) {
+                const res = getDisplacementAndDerivative(deg, h, phi1, phi2, phi3, phi4, currentLaw);
+                sData.push(res.s);
+            }
+
+            const maxS = h || 1;
+
+            // 位移
+            motionCtx.beginPath();
+            motionCtx.strokeStyle = '#26d0ce';
+            motionCtx.lineWidth = 2.5;
+            for (let i = 0; i <= steps; i+=2) {
+                const x = padX + (i/steps) * graphW;
+                const y = h - padY - (sData[i] / maxS) * graphH;
+                if (i===0) motionCtx.moveTo(x,y); else motionCtx.lineTo(x,y);
+            }
+            motionCtx.stroke();
+            
+            // 当前标记点
+            const resCurr = getDisplacementAndDerivative(currentCamAngle, h, phi1, phi2, phi3, phi4, currentLaw);
+            let curS = resCurr.s;
+            let px = padX + (currentCamAngle / 360) * graphW;
+            let py = h - padY - (curS / maxS) * graphH;
+            motionCtx.beginPath();
+            motionCtx.arc(px, py, 5, 0, Math.PI*2);
+            motionCtx.fillStyle = '#e74c3c';
+            motionCtx.fill();
+        }
+
+        // ---------- 动画与自适应缩放 ---------
+        function animate(timestamp) {
+            if (!isAnimating) return;
+            if (lastTimestamp === 0) lastTimestamp = timestamp;
+            const delta = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+            currentCamAngle += OMEGA * delta * (180 / Math.PI);
+            if (currentCamAngle >= 360) currentCamAngle -= 360;
+            camAngleInput.value = Math.round(currentCamAngle);
+            drawAll();
+            drawMotionCurves();
+            animFrameId = requestAnimationFrame(animate);
+        }
+
+        playBtn.addEventListener('click', function(){
+            if (!isAnimating) {
+                isAnimating = true;
+                lastTimestamp = 0;
+                animFrameId = requestAnimationFrame(animate);
+            }
+        });
+        pauseBtn.addEventListener('click', function(){
+            isAnimating = false;
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+        });
+        resetBtn.addEventListener('click', function(){
+            isAnimating = false;
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            currentCamAngle = 0;
+            camAngleInput.value = 0;
+            drawAll();
+            drawMotionCurves();
+        });
+
+        applyAngleBtn.addEventListener('click', function(){
+            let val = parseFloat(camAngleInput.value);
+            if (isNaN(val)) val = 0;
+            if (val < 0) val = 0;
+            if (val > 360) val = 360;
+            currentCamAngle = val;
+            camAngleInput.value = val;
+            drawAll();
+            drawMotionCurves();
+        });
+
+        function resizeCanvases() {
+            const container = camCanvas.parentElement;
+            camCanvas.width = container.clientWidth;
+            camCanvas.height = container.clientHeight;
+            
+            // 动态设置缩放比以防手机端溢出
+            SCALE = Math.min(camCanvas.width, camCanvas.height) / ( (r0 + h + Math.abs(e)) * 2.5 );
+            
+            const motionContainer = motionCanvas.parentElement;
+            motionCanvas.width = motionContainer.clientWidth;
+            motionCanvas.height = motionContainer.clientHeight;
+            
+            drawAll();
+            drawMotionCurves();
+        }
+        
+        window.addEventListener('resize', resizeCanvases);
+
+        // 初次绘制
+        setTimeout(() => {
+            syncParams();
+            resizeCanvases();
+        }, 50);
+        
+    })();
+</script>
+</body>
+</html>

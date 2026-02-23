@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>机械原理AI仿真平台</title>
+    <title>机械原理虚拟仿真实验平台</title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
+            /* 统一主题色规范 */
             --primary-color: #1a2980;
             --accent-color: #26d0ce;
-            --sidebar-width: 260px;
-            --header-height: 56px;
-            --bg-color: #f0f2f5;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --bg-color: #f4f7f9;
+            --text-main: #2d3748;
             --text-light: rgba(255, 255, 255, 0.9);
         }
 
@@ -26,28 +28,26 @@
 
         body {
             height: 100vh;
-            /* 适配移动端动态高度 */
-            height: 100dvh; 
+            height: 100dvh; /* 适配移动端刘海屏高度 */
             background-color: var(--bg-color);
-            overflow: hidden; /* 禁止 Body 滚动 */
+            overflow: hidden;
             display: flex;
         }
 
-        /* --- 遮罩层 (移动端专用) --- */
+        /* --- 移动端遮罩层 --- */
         .overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
             z-index: 99;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s ease;
         }
-
         .overlay.active {
             opacity: 1;
             visibility: visible;
@@ -56,7 +56,7 @@
         /* --- 侧边栏 --- */
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            background: linear-gradient(180deg, var(--primary-color) 0%, #0f172a 100%);
             color: white;
             display: flex;
             flex-direction: column;
@@ -64,13 +64,9 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             flex-shrink: 0;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
         }
-
-        /* PC端：收起状态 */
-        .sidebar.pc-collapsed {
-            width: 0;
-            overflow: hidden;
-        }
+        .sidebar.pc-collapsed { width: 0; overflow: hidden; }
 
         .logo-area {
             height: 120px;
@@ -81,26 +77,22 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             white-space: nowrap;
         }
-
         .logo-area h1 {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 700;
             margin-bottom: 6px;
             letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-
-        .logo-area p {
-            font-size: 0.75rem;
-            opacity: 0.7;
-        }
+        .logo-area p { font-size: 0.8rem; color: var(--accent-color); font-weight: 500; }
 
         .nav-menu {
             flex: 1;
-            padding: 15px 10px;
+            padding: 20px 15px;
             overflow-y: auto;
-            /* 隐藏滚动条但保留功能 */
             scrollbar-width: none; 
-            -ms-overflow-style: none;
         }
         .nav-menu::-webkit-scrollbar { display: none; }
 
@@ -110,42 +102,26 @@
             padding: 14px 18px;
             margin-bottom: 8px;
             cursor: pointer;
-            border-radius: 10px;
+            border-radius: 12px;
             transition: all 0.2s;
             color: var(--text-light);
             font-size: 0.95rem;
             white-space: nowrap;
         }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
+        .nav-item:hover { background: rgba(255, 255, 255, 0.1); transform: translateX(5px); }
         .nav-item.active {
             background: white;
             color: var(--primary-color);
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
+        .nav-item i { width: 30px; font-size: 1.1rem; text-align: center; margin-right: 5px; }
 
-        .nav-item i {
-            width: 28px;
-            font-size: 1.1rem;
-            text-align: center;
-            margin-right: 8px;
-        }
-
-        .sidebar-footer {
-            padding: 20px;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.1);
-            white-space: nowrap;
-        }
-
+        .sidebar-footer { padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
         .qr-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            color: white;
+            background: rgba(38, 208, 206, 0.15);
+            border: 1px solid rgba(38, 208, 206, 0.4);
+            color: var(--accent-color);
             padding: 10px;
             border-radius: 30px;
             cursor: pointer;
@@ -155,149 +131,77 @@
             justify-content: center;
             gap: 8px;
             transition: 0.3s;
+            font-weight: 600;
         }
-
-        .qr-btn:hover {
-            background: white;
-            color: var(--primary-color);
-        }
+        .qr-btn:hover { background: var(--accent-color); color: #0f172a; }
 
         /* --- 主内容区 --- */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            width: 100%; /* 确保自适应 */
+            width: 100%;
             position: relative;
-            background-color: white;
         }
 
-        /* 顶部导航条 */
+        /* 顶部控制条 */
         .top-bar {
             height: var(--header-height);
             background: white;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
             z-index: 50;
         }
-
         .menu-toggle-btn {
-            background: #f5f7fa;
+            background: #f1f5f9;
             border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            color: #333;
-            font-size: 1.1rem;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: 0.2s;
         }
+        .menu-toggle-btn:hover { background: #e2e8f0; }
+        .page-title { margin-left: 15px; font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
 
-        .menu-toggle-btn:hover {
-            background: #e4e6eb;
-        }
+        /* Iframe 容器 */
+        .iframe-container { flex: 1; width: 100%; height: 100%; position: relative; overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
 
-        .page-title {
-            margin-left: 16px;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #333;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* Iframe 容器 - 关键适配 */
-        .iframe-container {
-            flex: 1;
-            width: 100%;
-            height: 100%; /* 填满剩余高度 */
-            position: relative;
-            overflow: hidden;
-            background: #fff;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
-
-        /* --- 二维码模态框 --- */
+        /* --- 二维码弹窗 --- */
         .qr-modal {
             display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            z-index: 200;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            z-index: 200; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s;
         }
-
-        .qr-modal.show {
-            opacity: 1;
-        }
-
+        .qr-modal.show { opacity: 1; }
         .qr-card {
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
-            text-align: center;
-            width: 85%;
-            max-width: 320px;
-            transform: scale(0.9);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white; padding: 30px; border-radius: 20px; text-align: center;
+            width: 85%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
+        .qr-modal.show .qr-card { transform: scale(1); }
 
-        .qr-modal.show .qr-card {
-            transform: scale(1);
-        }
-
-        /* --- 移动端响应式 (断点：768px) --- */
+        /* --- 移动端响应式 --- */
         @media (max-width: 768px) {
-            /* 移动端侧边栏：默认隐藏在左侧屏幕外 */
             .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100%;
-                /* 适配移动端动态高度 */
-                height: 100dvh; 
+                position: fixed; top: 0; left: 0; height: 100%; height: 100dvh; 
                 transform: translateX(-100%);
-                box-shadow: 6px 0 20px rgba(0,0,0,0.15);
             }
-
-            /* 移动端展开状态 */
-            .sidebar.mobile-open {
-                transform: translateX(0);
-            }
-
-            /* 移动端不再使用 width: 0 的方式 */
-            .sidebar.pc-collapsed {
-                width: var(--sidebar-width);
-            }
-
-            .logo-area {
-                height: 100px;
-            }
-            
-            .nav-item {
-                padding: 16px; /* 加大触控区域 */
-                margin-bottom: 5px;
-            }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .sidebar.pc-collapsed { width: var(--sidebar-width); }
+            .nav-item { padding: 16px 20px; }
+            .page-title { font-size: 1rem; }
         }
     </style>
 </head>
@@ -307,51 +211,44 @@
 
     <div class="sidebar" id="sidebar">
         <div class="logo-area">
-            <h1><i class="fas fa-flask"></i>机械原理AI仿真平台</h1>
+            <h1><i class="fas fa-layer-group"></i>机械原理仿真</h1>
             <p>Mechanics Simulation Lab</p>
         </div>
 
         <div class="nav-menu">
-            <div class="nav-item active" onclick="loadDemo(this, 'qubingchonghedian_1.html', '曲柄摇块速度/加速度分析')">
+            <div class="nav-item active" onclick="loadDemo(this, '1_qubingchonghedian.html', '曲柄摇块机构速度与加速度分析')">
                 <i class="fas fa-project-diagram"></i>
-                <span>曲柄摇块速度/加速度分析</span>
+                <span>曲柄摇块运动学分析</span>
             </div>
-            
-            <div class="nav-item" onclick="loadDemo(this, 'siganleixing_2.html', '四杆机构类型分析')">
+            <div class="nav-item" onclick="loadDemo(this, '2_siganleixing.html', '四杆机构类型分析')">
                 <i class="fas fa-cogs"></i>
-                <span>四杆机构类型分析</span>
+                <span>四杆机构类型判断</span>
             </div>
-            
-            <div class="nav-item" onclick="loadDemo(this, 'siganchuandongjiao_3.html', '四杆机构传动角')">
-                <i class="fas fa-bezier-curve"></i>
+            <div class="nav-item" onclick="loadDemo(this, '3_siganchuandongjiao.html', '四杆机构传动角')">
+                <i class="fas fa-drafting-compass"></i>
                 <span>四杆机构传动角</span>
             </div>
-            
-            <div class="nav-item" onclick="loadDemo(this, 'tulunyalijiao_4.html', '滚子凸轮压力角')">
-                <i class="fas fa-chart-line"></i>
+            <div class="nav-item" onclick="loadDemo(this, '4_tulunyalijiao.html', '滚子凸轮压力角')">
+                <i class="fas fa-chart-area"></i>
                 <span>滚子凸轮压力角</span>
             </div>
-			
-			<div class="nav-item" onclick="loadDemo(this, 'gunzilunkuo_5.html', '滚子凸轮轮廓')">
-			    <i class="fas fa-chart-line"></i>
-			    <span>滚子凸轮轮廓</span>
+			<div class="nav-item" onclick="loadDemo(this, '5_gunzilunkuo.html', '滚子凸轮轮廓设计')">
+			    <i class="fas fa-bezier-curve"></i>
+			    <span>滚子凸轮轮廓设计</span>
 			</div>
-			
-			<div class="nav-item" onclick="loadDemo(this, 'pingdilunkuo_6.html', '平底推杆凸轮轮廓')">
-			    <i class="fas fa-chart-line"></i>
-			    <span>滚平底推杆凸轮轮廓</span>
+			<div class="nav-item" onclick="loadDemo(this, '6_pingdilunkuo.html', '平底推杆凸轮轮廓')">
+			    <i class="fas fa-wave-square"></i>
+			    <span>平底推杆凸轮轮廓</span>
 			</div>
-			
-			<div class="nav-item" onclick="loadDemo(this, 'chilunniehejiao_7.html', '齿轮啮合角')">
-			    <i class="fas fa-chart-line"></i>
-			    <span>齿轮啮合角</span>
+			<div class="nav-item" onclick="loadDemo(this, '7_chilunniehejiao.html', '齿轮啮合角分析')">
+			    <i class="fas fa-cog"></i>
+			    <span>齿轮啮合角分析</span>
 			</div>
-			
         </div>
 
         <div class="sidebar-footer">
             <div class="qr-btn" onclick="showQRCode()">
-                <i class="fas fa-qrcode"></i> 手机扫码分享
+                <i class="fas fa-qrcode"></i> 手机扫码体验
             </div>
         </div>
     </div>
@@ -361,22 +258,21 @@
             <button class="menu-toggle-btn" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
-            <span class="page-title" id="pageTitle">四杆机构传动角</span>
+            <span class="page-title" id="pageTitle">曲柄摇块机构速度与加速度分析</span>
         </div>
-
         <div class="iframe-container">
-            <iframe id="contentFrame" src="qubingchonghedian_1.html" scrolling="yes"></iframe>
+            <iframe id="contentFrame" src="1_qubingchonghedian.html" scrolling="yes"></iframe>
         </div>
     </div>
 
     <div class="qr-modal" id="qrModal" onclick="closeQRCode(event)">
         <div class="qr-card" onclick="event.stopPropagation()">
-            <h3 style="color:#1a2980; margin-bottom:10px;">手机扫描体验</h3>
-            <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">在手机浏览器访问本实验平台</p>
+            <h3 style="color:var(--primary-color); margin-bottom:10px;">扫码在手机端操作</h3>
+            <p style="color:#64748b; font-size:0.9rem; margin-bottom:20px;">使用手机浏览器或微信扫描下方二维码</p>
             <div id="qrcode" style="display:flex; justify-content:center; margin-bottom:20px;"></div>
             <button onclick="document.getElementById('qrModal').classList.remove('show'); setTimeout(()=>document.getElementById('qrModal').style.display='none', 300)" 
-                    style="background:#f1f3f5; border:none; padding:10px 30px; border-radius:20px; color:#555; font-weight:600; cursor:pointer;">
-                关闭
+                    style="background:#f1f5f9; border:none; padding:10px 30px; border-radius:8px; color:#475569; font-weight:600; cursor:pointer; width:100%;">
+                关 闭
             </button>
         </div>
     </div>
@@ -387,60 +283,44 @@
         const iframe = document.getElementById('contentFrame');
         const pageTitle = document.getElementById('pageTitle');
 
-        // 切换侧边栏 (智能判断 PC 还是 Mobile)
         function toggleSidebar() {
             const isMobile = window.innerWidth <= 768;
-
             if (isMobile) {
-                // 移动端：侧滑 + 遮罩
                 sidebar.classList.toggle('mobile-open');
                 overlay.classList.toggle('active');
             } else {
-                // PC端：挤压宽度
                 sidebar.classList.toggle('pc-collapsed');
             }
         }
 
-        // 加载演示页面
         function loadDemo(element, url, title) {
-            // 1. UI 状态更新
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             element.classList.add('active');
             pageTitle.textContent = title;
 
-            // 2. Iframe 切换动画
             iframe.style.opacity = '0';
             setTimeout(() => {
                 iframe.src = url;
-                iframe.onload = () => {
-                    iframe.style.opacity = '1';
-                };
+                iframe.onload = () => { iframe.style.opacity = '1'; };
             }, 200);
 
-            // 3. 移动端自动收起菜单
             if (window.innerWidth <= 768) {
                 sidebar.classList.remove('mobile-open');
                 overlay.classList.remove('active');
             }
         }
 
-        // 二维码逻辑
         function showQRCode() {
             const modal = document.getElementById('qrModal');
             const container = document.getElementById('qrcode');
-            
             container.innerHTML = "";
             new QRCode(container, {
                 text: window.location.href,
-                width: 180,
-                height: 180,
-                colorDark : "#1a2980",
-                colorLight : "#ffffff",
+                width: 160, height: 160,
+                colorDark : "#1e293b", colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
-            
             modal.style.display = 'flex';
-            // 稍微延迟添加 show 类以触发 CSS 动画
             setTimeout(() => modal.classList.add('show'), 10);
         }
 
@@ -452,19 +332,15 @@
             }
         }
 
-        // 监听窗口大小变化，自动修复布局状态
         window.addEventListener('resize', () => {
             if (window.innerWidth > 768) {
-                // 如果从手机变回PC，移除移动端的残留样式
                 sidebar.classList.remove('mobile-open');
                 overlay.classList.remove('active');
             } else {
-                // 如果从PC变回手机，移除PC的折叠状态
                 sidebar.classList.remove('pc-collapsed');
             }
         });
 
-        // 初始化过渡效果
         iframe.style.transition = 'opacity 0.3s ease';
     </script>
 </body>

@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>机械原理：滚子凸轮 · 压力角与优化设计</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* 统一主题体系 - 工程蓝 */
+            --primary-color: #1a2980;
+            --accent-color: #26d0ce;
+            --bg-color: #f4f7f9;
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --border-color: #e2e8f0;
+            
+            /* 状态强调色 */
+            --status-orange: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+            flex: 1;
+        }
+
+        /* --- 顶部信息区 --- */
+        header {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        h1 small {
+            font-size: 0.9rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: 400;
+            white-space: nowrap;
+        }
+        
+        .sub {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            line-height: 1.5;
+            border-left: 4px solid var(--accent-color);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .sub span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* --- 主内容区 (弹性分栏) --- */
+        .main-content {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 左侧：Canvas 仿真视图 */
+        .simulation-container {
+            flex: 2;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+
+        .section-title {
+            color: var(--text-main);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 双 Canvas 包装区 */
+        .canvas-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cam-wrapper {
+            flex: 1;
+            min-height: 350px;
+            border-radius: 12px;
+            background: #fefcf5; /* 轻微暖色底，更清晰 */
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .motion-wrapper {
+            height: 140px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            padding: 5px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+            color: var(--text-sub);
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+        .dot.circle { border-radius: 50%; }
+
+        /* 右侧：控制与数据看板 */
+        .control-container {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            padding: 20px;
+            overflow-y: auto;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-container h2 {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            margin: 0 0 5px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* 滑块控制区 */
+        .slider-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .slider-box label {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .slider-control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #cbd5e1;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            border: 2px solid white;
+        }
+
+        .tick-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 8px;
+            padding: 0 5px;
+        }
+
+        .angle-display {
+            background: var(--primary-color);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            min-width: 80px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        /* 压力角专属突出看板 */
+        .pressure-board {
+            background: #fffbeb;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid #fde68a;
+            border-left: 5px solid var(--status-orange);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pressure-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pressure-title {
+            font-size: 1rem;
+            color: #92400e;
+            font-weight: 700;
+        }
+
+        .pressure-val {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #b45309;
+            font-family: 'Courier New', monospace;
+            line-height: 1;
+        }
+
+        .pressure-limits {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #b45309;
+            background: rgba(251, 191, 36, 0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        /* 运动规律卡片 */
+        .motion-laws-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .law-card {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .law-phase { font-size: 0.85rem; color: var(--text-sub); font-weight: 600; display: flex; align-items: center; gap: 5px;}
+        .law-desc { font-size: 0.95rem; color: var(--primary-color); font-weight: 700; }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover { background: var(--primary-color); color: white; }
+        .btn:active { transform: scale(0.98); }
+
+        .footnote {
+            margin-top: auto;
+            color: var(--text-sub);
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            border: 1px dashed #cbd5e1;
+        }
+
+        /* --- 响应式断点 --- */
+        @media (max-width: 900px) {
+            body { height: auto; min-height: 100vh; }
+            .main-content { flex-direction: column; }
+            .cam-wrapper { min-height: 60vw; max-height: 400px; }
+            .control-container { min-width: 100%; overflow: visible; }
+            h1 { font-size: 1.3rem; }
+            h1 small { font-size: 0.8rem; }
+            .sub { font-size: 0.85rem; flex-direction: column; gap: 5px;}
+        }
+        @media (max-width: 480px) {
+            .pressure-limits { flex-direction: column; gap: 4px; }
+            .motion-laws-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1><i class="fas fa-microscope"></i> 滚子凸轮 · 最小加速度优化设计 <small>正弦推程/余弦回程</small></h1>
+            <div class="sub">
+                <span><i class="fas fa-cog"></i> 基圆 r₀ = 50mm</span>
+                <span><i class="fas fa-circle"></i> 滚子 rᵣ = 8mm</span>
+                <span><i class="fas fa-arrows-alt-v"></i> 升程 h = 16mm</span>
+                <span><i class="fas fa-sync-alt"></i> 角速度 ω = 1.5 rad/s</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="simulation-container">
+                <div class="section-title">
+                    <span><i class="fas fa-tv"></i> 凸轮轮廓与运动分析可视化</span>
+                </div>
+                
+                <div class="canvas-group">
+                    <div class="cam-wrapper">
+                        <canvas id="camCanvas"></canvas>
+                    </div>
+                    <div class="motion-wrapper">
+                        <canvas id="motionCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><span class="dot" style="background:#2c3e50;"></span> 基圆</div>
+                    <div class="legend-item"><span class="dot" style="background:#e63946;"></span> 理论廓线</div>
+                    <div class="legend-item"><span class="dot" style="background:#1e3c4c;"></span> 实际廓线</div>
+                    <div class="legend-item"><span class="dot circle" style="background:#0b4f6c;"></span> 滚子中心</div>
+                    <div class="legend-item"><span class="dot" style="background:#ffb300;"></span> 压力角(α)</div>
+                    <div class="legend-item"><span class="dot" style="background:#aaa; border:1px dashed #2c7da0; box-sizing: border-box;"></span> 接触法线</div>
+                </div>
+            </div>
+
+            <div class="control-container">
+                <h2><i class="fas fa-sliders-h"></i> 角度控制与压力角监控</h2>
+                
+                <div class="slider-box">
+                    <label>🎚️ 任意转角压力角 (模拟凸轮旋转)</label>
+                    <div class="slider-control-group">
+                        <input type="range" id="camAngleSlider" min="0" max="360" value="75" step="0.5">
+                        <div class="angle-display">φ = <span id="angleDisplay">75.0</span>°</div>
+                    </div>
+                    <div class="tick-labels">
+                        <span>0°</span><span>150°</span><span>180°</span><span>270°</span><span>360°</span>
+                    </div>
+                </div>
+
+                <div class="pressure-board">
+                    <div class="pressure-header">
+                        <span class="pressure-title">📏 当前压力角 (滚子推杆)</span>
+                        <span class="pressure-val" id="pressureAngleValue">26.3°</span>
+                    </div>
+                    <div class="pressure-limits">
+                        <span><i class="fas fa-exclamation-triangle"></i> 推程许用 [α] ≤ 35°</span>
+                        <span><i class="fas fa-exclamation-triangle"></i> 回程许用 [α] ≤ 65°</span>
+                    </div>
+                </div>
+
+                <h2><i class="fas fa-chart-line"></i> 运动规律 (无/柔性冲击)</h2>
+                <div class="motion-laws-grid">
+                    <div class="law-card">
+                        <span class="law-phase"><i class="fas fa-arrow-up" style="color:#e63946"></i> 推程 0~150°</span>
+                        <span class="law-desc">正弦加速度</span>
+                    </div>
+                    <div class="law-card">
+                        <span class="law-phase"><i class="fas fa-pause" style="color:#64748b"></i> 远休 150~180°</span>
+                        <span class="law-desc">s = 16mm</span>
+                    </div>
+                    <div class="law-card">
+                        <span class="law-phase"><i class="fas fa-arrow-down" style="color:#2ecc71"></i> 回程 180~270°</span>
+                        <span class="law-desc">余弦加速度</span>
+                    </div>
+                    <div class="law-card">
+                        <span class="law-phase"><i class="fas fa-stop" style="color:#94a3b8"></i> 近休 270~360°</span>
+                        <span class="law-desc">s = 0mm</span>
+                    </div>
+                </div>
+
+                <button class="btn" id="resetAngleBtn">
+                    <i class="fas fa-undo-alt"></i> 重置凸轮转角 (0°)
+                </button>
+
+                <div class="footnote">
+                    ✅ <strong>原理说明：</strong><br>
+                    采用反转法绘制。实际廓线为理论廓线的等距曲线（内包络）。<br>
+                    压力角计算基于对心直动推杆公式。
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function() {
+    // ==========================================
+    //  机械原理核心逻辑 (原封不动，绝对保留)
+    // ==========================================
+    
+    // ---------- 凸轮机构参数 ----------
+    const omega = 1.5;               // rad/s
+    const baseRadius = 50;           // 基圆半径 mm
+    const rollerRadius = 8;          // 滚子半径 mm
+    const lift = 16;                // 推杆升程 mm
+    
+    // 运动区间角度定义
+    const phiPushStart = 0;         
+    const phiPushEnd = 150;         
+    const phiDwellHighStart = 150;  
+    const phiDwellHighEnd = 180;    
+    const phiReturnStart = 180;     
+    const phiReturnEnd = 270;       
+    const phiDwellLowStart = 270;   
+    const phiDwellLowEnd = 360;     
+
+    // ---------- 运动规律计算 ----------
+    function getDisplacementVelocity(phiDeg) {
+        let phi = phiDeg;
+        let s = 0, v = 0, a = 0;
+        const omegaRad = omega;
+        
+        if (phi >= phiPushStart && phi <= phiPushEnd) {
+            // 正弦加速度推程
+            let Phi = phiPushEnd - phiPushStart;
+            let phiRad = phi * Math.PI / 180;
+            let PhiRad = Phi * Math.PI / 180;
+            let ratio = phi / Phi;
+            s = lift * (ratio - Math.sin(2 * Math.PI * ratio) / (2 * Math.PI));
+            let ds_dphi = (lift / PhiRad) * (1 - Math.cos(2 * Math.PI * ratio));
+            v = ds_dphi * omegaRad;
+            let d2s_dphi2 = (2 * Math.PI * lift / (PhiRad * PhiRad)) * Math.sin(2 * Math.PI * ratio);
+            a = d2s_dphi2 * omegaRad * omegaRad;
+        }
+        else if (phi >= phiDwellHighStart && phi <= phiDwellHighEnd) {
+            // 远休止
+            s = lift; v = 0; a = 0;
+        }
+        else if (phi >= phiReturnStart && phi <= phiReturnEnd) {
+            // 余弦加速度回程
+            let PhiRet = phiReturnEnd - phiReturnStart;
+            let phiLocal = phi - phiReturnStart;
+            let ratio = phiLocal / PhiRet;
+            s = (lift / 2) * (1 + Math.cos(Math.PI * ratio));
+            let PhiRetRad = PhiRet * Math.PI / 180;
+            let ds_dphi = -(lift * Math.PI / (2 * PhiRetRad)) * Math.sin(Math.PI * ratio);
+            v = ds_dphi * omegaRad;
+            let d2s_dphi2 = -(lift * Math.PI * Math.PI / (2 * PhiRetRad * PhiRetRad)) * Math.cos(Math.PI * ratio);
+            a = d2s_dphi2 * omegaRad * omegaRad;
+        }
+        else if (phi >= phiDwellLowStart && phi <= phiDwellLowEnd) {
+            // 近休止
+            s = 0; v = 0; a = 0;
+        }
+        return { s, v, a };
+    }
+
+    function getDisplacement(phiDeg) {
+        return getDisplacementVelocity(phiDeg).s;
+    }
+
+    // ---------- 理论廓线 (反转法) ----------
+    function getCamTheoryPoint(phiDeg) {
+        let s = getDisplacement(phiDeg);
+        let r = baseRadius + s;
+        let angleRad = -phiDeg * Math.PI / 180; 
+        let x = r * Math.cos(angleRad);
+        let y = r * Math.sin(angleRad);
+        return { x, y, r, s };
+    }
+
+    // ---------- 实际廓线 (滚子包络) ----------
+    function getActualCamPoint(phiDeg) {
+        let pt = getCamTheoryPoint(phiDeg);
+        let x0 = pt.x, y0 = pt.y;
+        
+        let delta = 1e-4;
+        let pt2 = getCamTheoryPoint(phiDeg + delta);
+        let dx_dphi = (pt2.x - pt.x) / (delta * Math.PI/180);
+        let dy_dphi = (pt2.y - pt.y) / (delta * Math.PI/180);
+        
+        let mag = Math.hypot(dx_dphi, dy_dphi);
+        if (mag < 1e-6) return { x: x0, y: y0 }; 
+        let nx = -dy_dphi / mag;
+        let ny = dx_dphi / mag;
+        
+        let offset = -rollerRadius; 
+        let xActual = x0 + offset * nx;
+        let yActual = y0 + offset * ny;
+        return { x: xActual, y: yActual, nx, ny, mag };
+    }
+
+    // ---------- 压力角计算 ----------
+    function getPressureAngle(phiDeg) {
+        let s = getDisplacement(phiDeg);
+        let delta = 1e-5;
+        let ds_dphi_deg = (getDisplacement(phiDeg + delta) - s) / delta;
+        let ds_dphi = ds_dphi_deg * 180 / Math.PI; 
+        let r = baseRadius + s;
+        let tanAlpha = Math.abs(ds_dphi) / r;
+        let alphaRad = Math.atan(tanAlpha);
+        return alphaRad * 180 / Math.PI;
+    }
+
+    // ==========================================
+    //  UI 与 绘图逻辑 (适配响应式双 Canvas)
+    // ==========================================
+    
+    const camCanvas = document.getElementById('camCanvas');
+    const ctx = camCanvas.getContext('2d');
+    const motionCanvas = document.getElementById('motionCanvas');
+    const mCtx = motionCanvas.getContext('2d');
+
+    let currentAngle = 75.0; 
+
+    const angleSlider = document.getElementById('camAngleSlider');
+    const angleDisplay = document.getElementById('angleDisplay');
+    const pressureAngleValue = document.getElementById('pressureAngleValue');
+
+    // 重置
+    document.getElementById('resetAngleBtn').addEventListener('click', ()=>{
+        currentAngle = 0;
+        angleSlider.value = 0;
+        angleDisplay.innerText = '0.0';
+        drawAll();
+    });
+
+    // 滑块
+    angleSlider.addEventListener('input', (e)=>{
+        currentAngle = parseFloat(e.target.value);
+        angleDisplay.innerText = currentAngle.toFixed(1);
+        drawAll();
+    });
+
+    // 窗口大小改变时重绘
+    window.addEventListener('resize', resizeCanvas);
+
+    function resizeCanvas() {
+        // 凸轮主视图 Canvas 尺寸动态获取父容器尺寸
+        const camContainer = camCanvas.parentElement;
+        const cWidth = camContainer.clientWidth;
+        const cHeight = camContainer.clientHeight;
+        
+        // 设置 Canvas 内部分辨率等于容器实际像素，保持高分屏清晰
+        camCanvas.width = cWidth;
+        camCanvas.height = cHeight; 
+
+        // 运动线图 Canvas 尺寸动态获取
+        const motionContainer = motionCanvas.parentElement;
+        motionCanvas.width = motionContainer.clientWidth;
+        motionCanvas.height = motionContainer.clientHeight;
+
+        drawAll();
+    }
+
+    function drawAll() {
+        drawCamProfile();
+        drawMotionDiagram();
+        updatePressureAngleDisplay();
+    }
+
+    function drawCamProfile() {
+        let w = camCanvas.width;
+        let h = camCanvas.height;
+        ctx.clearRect(0, 0, w, h);
+        
+        let centerX = w / 2;
+        let centerY = h / 2;
+        
+        // 原版动态缩放算法：根据可用宽度的 85% 映射到 170mm 的物理直径范围内
+        // 使用宽高中较小的值，防止机构在横向或纵向溢出
+        let minDim = Math.min(w, h);
+        let scale = (minDim * 0.85) / 170; 
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        
+        // 网格
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 0.8;
+        let gridStep = 20;
+        let gridCountX = Math.ceil((w/2/scale)/gridStep);
+        let gridCountY = Math.ceil((h/2/scale)/gridStep);
+        
+        for (let i = -gridCountX * gridStep; i <= gridCountX * gridStep; i+=gridStep) {
+            ctx.beginPath(); ctx.moveTo(i*scale, -h/2); ctx.lineTo(i*scale, h/2); ctx.stroke();
+        }
+        for (let i = -gridCountY * gridStep; i <= gridCountY * gridStep; i+=gridStep) {
+            ctx.beginPath(); ctx.moveTo(-w/2, i*scale); ctx.lineTo(w/2, i*scale); ctx.stroke();
+        }
+        
+        // 基圆
+        ctx.beginPath();
+        ctx.arc(0, 0, baseRadius * scale, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#2c3e50';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(44,62,80,0.04)';
+        ctx.fill();
+        
+        // 理论廓线
+        ctx.beginPath();
+        ctx.strokeStyle = '#e63946';
+        ctx.lineWidth = 2;
+        for (let deg = 0; deg <= 360; deg+=1.5) {
+            let pt = getCamTheoryPoint(deg);
+            let x = pt.x * scale, y = pt.y * scale;
+            if (deg === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // 实际廓线
+        ctx.beginPath();
+        ctx.strokeStyle = '#1e3c4c';
+        ctx.lineWidth = 2.5;
+        for (let deg = 0; deg <= 360; deg+=1.5) {
+            let pt = getActualCamPoint(deg);
+            let x = pt.x * scale, y = pt.y * scale;
+            if (deg === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // 文字标注
+        ctx.font = 'bold 14px "Segoe UI"';
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillText(`r₀=${baseRadius}`, 10, -baseRadius*scale - 10);
+        
+        // 绘制当前状态
+        let phi = currentAngle;
+        let theoPt = getCamTheoryPoint(phi);
+        
+        let rollerCenterX = theoPt.x * scale;
+        let rollerCenterY = theoPt.y * scale;
+        
+        // 滚子
+        ctx.beginPath();
+        ctx.arc(rollerCenterX, rollerCenterY, rollerRadius * scale, 0, 2*Math.PI);
+        ctx.fillStyle = '#0b4f6c';
+        ctx.shadowColor = 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = 5;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // 推杆
+        let guideDirX = Math.cos(-phi * Math.PI/180);
+        let guideDirY = Math.sin(-phi * Math.PI/180);
+        ctx.beginPath();
+        ctx.moveTo(rollerCenterX, rollerCenterY);
+        ctx.lineTo(rollerCenterX + guideDirX * 45 * scale, rollerCenterY + guideDirY * 45 * scale);
+        ctx.strokeStyle = '#2a6d8c';
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+        
+        // 滚子中心点
+        ctx.beginPath();
+        ctx.arc(rollerCenterX, rollerCenterY, 2, 0, 2*Math.PI);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+
+        // 压力角可视化
+        let deltaA = 1e-3;
+        let ptNear = getCamTheoryPoint(phi + deltaA);
+        let dx = (ptNear.x - theoPt.x) * scale;
+        let dy = (ptNear.y - theoPt.y) * scale;
+        let magTan = Math.hypot(dx, dy);
+        
+        if (magTan > 0.001) {
+            let nx = -dy / magTan;
+            let ny = dx / magTan;
+            let vX = guideDirX, vY = guideDirY;
+            let dot = nx * vX + ny * vY;
+            if (dot < 0) { nx = -nx; ny = -ny; } 
+            
+            // 法线
+            ctx.beginPath();
+            ctx.moveTo(rollerCenterX, rollerCenterY);
+            ctx.lineTo(rollerCenterX + nx * 35 * scale, rollerCenterY + ny * 35 * scale);
+            ctx.strokeStyle = '#ffb300';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 速度方向
+            ctx.beginPath();
+            ctx.moveTo(rollerCenterX, rollerCenterY);
+            ctx.lineTo(rollerCenterX + vX * 40 * scale, rollerCenterY + vY * 40 * scale);
+            ctx.strokeStyle = '#43a6c9';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.font = 'bold 15px "Segoe UI"';
+            ctx.fillStyle = '#b85e00';
+            ctx.fillText('α', rollerCenterX + 25, rollerCenterY - 25);
+        }
+
+        // 凸轮中心
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, 2*Math.PI);
+        ctx.fillStyle = '#0f2c38';
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawMotionDiagram() {
+        let w = motionCanvas.width;
+        let h = motionCanvas.height;
+        mCtx.clearRect(0, 0, w, h);
+        
+        // 自适应边距
+        let marginX = Math.max(30, w * 0.05); // 保证最小留白
+        let graphW = w - 2 * marginX;
+        let graphH = h * 0.65;
+        let topY = (h - graphH) / 2;
+        
+        // 绘制基准线
+        mCtx.beginPath();
+        mCtx.moveTo(marginX, topY + graphH);
+        mCtx.lineTo(marginX + graphW, topY + graphH);
+        mCtx.strokeStyle = '#cbd5e1';
+        mCtx.lineWidth = 1;
+        mCtx.stroke();
+
+        // 曲线
+        mCtx.beginPath();
+        mCtx.strokeStyle = '#1e3c4c';
+        mCtx.lineWidth = 2.2;
+        for (let deg = 0; deg <= 360; deg+=2) {
+            let s = getDisplacement(deg);
+            let x = marginX + (deg/360) * graphW;
+            let y = (topY + graphH) - (s / lift) * graphH; 
+            if (deg === 0) mCtx.moveTo(x, y);
+            else mCtx.lineTo(x, y);
+        }
+        mCtx.stroke();
+        
+        // 当前点
+        let sCurr = getDisplacement(currentAngle);
+        let xCurr = marginX + (currentAngle/360) * graphW;
+        let yCurr = (topY + graphH) - (sCurr / lift) * graphH;
+        
+        mCtx.beginPath();
+        mCtx.arc(xCurr, yCurr, 5, 0, 2*Math.PI);
+        mCtx.fillStyle = '#e63946';
+        mCtx.fill();
+        
+        // 坐标文字
+        mCtx.fillStyle = '#64748b';
+        mCtx.font = '12px sans-serif';
+        mCtx.textAlign = 'center';
+        mCtx.fillText('推程', marginX + graphW * (75/360), h - 5);
+        mCtx.fillText('回程', marginX + graphW * (225/360), h - 5);
+        mCtx.textAlign = 'left';
+        mCtx.fillText('s', marginX - 20, topY + 10);
+    }
+
+    function updatePressureAngleDisplay() {
+        let alpha = getPressureAngle(currentAngle);
+        pressureAngleValue.innerText = alpha.toFixed(1) + '°';
+    }
+
+    // 启动
+    // 延迟一点初始化确保 DOM 计算到正确的宽高
+    setTimeout(() => {
+        resizeCanvas();
+    }, 50);
+
+})();
+</script>
+</body>
+</html>

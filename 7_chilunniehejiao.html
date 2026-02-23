@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>垂直布置 · 引线参数表 · 自适应优化</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* 统一“工程蓝” UI 规范 */
+            --primary-color: #1a2980;
+            --accent-color: #26d0ce;
+            --bg-color: #f4f7f9;
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            
+            /* 齿轮专用颜色 */
+            --gear-pitch: #1f6da9;
+            --gear-root: #b95b1a;
+            --gear-add: #2b7a4e;
+            --gear-base: #c02f2f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+        }
+
+        /* --- 顶部标题区域 --- */
+        header {
+            background: var(--panel-bg);
+            padding: 20px 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            border-left: 5px solid var(--primary-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .sub {
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        /* --- 顶部控制面板 (滑块区) --- */
+        .top-control-panel {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 20px 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .input-item {
+            flex: 1;
+            min-width: 250px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px 20px;
+            border: 1px solid var(--border-color);
+            border-bottom: 3px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 1.05rem;
+        }
+
+        .input-header i {
+            color: var(--primary-color);
+            margin-right: 6px;
+        }
+
+        .val-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        input[type=range] {
+            width: 100%;
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* --- 主内容区 (弹性双栏) --- */
+        .row {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 左侧：Canvas 仿真区域 */
+        .canvas-area {
+            flex: 2;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            background: #fcfdfd;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            min-height: 450px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 右侧：参数引线表格与圆参数 */
+        .info-panel {
+            flex: 1;
+            min-width: 320px;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 引线表格风格 */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        .param-table tr {
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .param-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .param-table td {
+            padding: 12px 4px;
+            font-size: 1rem;
+        }
+
+        .param-table .label {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .param-table .value {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--status-red);
+            text-align: right;
+            padding-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        .param-table .unit {
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            width: 35px;
+            text-align: right;
+        }
+
+        /* 圆参数区域 */
+        .circle-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .circle-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            gap: 8px;
+        }
+
+        .circle-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .circle-name {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .circle-value {
+            margin-left: auto;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--status-red);
+            font-size: 1rem;
+        }
+
+        .extra-legend {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            background: #f0fdfa;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccfbf1;
+            font-size: 0.85rem;
+            color: #0f766e;
+            font-weight: 600;
+            gap: 10px;
+        }
+
+        /* --- 底部说明区 (完整保留原版文本) --- */
+        .footer-panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            border: 1px dashed var(--border-color);
+        }
+
+        /* --- 响应式适配 --- */
+        @media (max-width: 1024px) {
+            .row { flex-direction: column; gap: 15px; }
+            .info-panel { min-width: 100%; }
+            .canvas-area { padding: 15px; }
+            .canvas-wrapper { min-height: 60vw; max-height: 500px; }
+            .top-control-panel { flex-direction: column; gap: 15px;}
+            h1 { font-size: 1.4rem; }
+        }
+
+        @media (max-width: 600px) {
+            .main-wrapper { padding: 10px; gap: 10px; }
+            header, .canvas-area, .info-panel, .top-control-panel { padding: 15px; }
+            .circle-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <header>
+        <h1><i class="fas fa-cogs"></i> 垂直布置 · 引线参数表 · 自适应优化</h1>
+        <div class="sub">
+            <i class="fas fa-info-circle"></i> 小齿轮(上)主动 · 大齿轮(下)从动 · 模数 m = 20 mm · 压力角 α = 20°
+        </div>
+    </header>
+
+    <div class="top-control-panel">
+        <div class="input-item">
+            <div class="input-header">
+                <span><i class="fas fa-cog"></i>小齿轮齿数 Z₁</span>
+                <span class="val-badge" id="z1Value">30</span>
+            </div>
+            <input type="range" id="z1Slider" min="10" max="60" value="30" step="1">
+        </div>
+        
+        <div class="input-item">
+            <div class="input-header">
+                <span><i class="fas fa-cogs"></i>大齿轮齿数 Z₂</span>
+                <span class="val-badge" id="z2Value">40</span>
+            </div>
+            <input type="range" id="z2Slider" min="10" max="60" value="40" step="1">
+        </div>
+        
+        <div class="input-item">
+            <div class="input-header">
+                <span><i class="fas fa-ruler-horizontal"></i>实际中心距 a' (mm)</span>
+                <span class="val-badge" id="aValue">725</span>
+            </div>
+            <input type="range" id="aSlider" min="500" max="900" value="725" step="1">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="gearCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="section-title"><i class="fas fa-list-alt"></i> 齿轮参数表</div>
+            
+            <table class="param-table">
+                <tr>
+                    <td class="label">小齿轮齿数 Z₁</td>
+                    <td class="value" id="infoZ1">30</td>
+                    <td class="unit"></td>
+                </tr>
+                <tr>
+                    <td class="label">大齿轮齿数 Z₂</td>
+                    <td class="value" id="infoZ2">40</td>
+                    <td class="unit"></td>
+                </tr>
+                <tr>
+                    <td class="label">模数 m</td>
+                    <td class="value">20</td>
+                    <td class="unit">mm</td>
+                </tr>
+                <tr>
+                    <td class="label">压力角 α</td>
+                    <td class="value">20</td>
+                    <td class="unit">°</td>
+                </tr>
+                <tr>
+                    <td class="label">实际中心距 a'</td>
+                    <td class="value" id="infoA">725.0</td>
+                    <td class="unit">mm</td>
+                </tr>
+                <tr>
+                    <td class="label">标准中心距 a</td>
+                    <td class="value" id="infoStd">700.0</td>
+                    <td class="unit">mm</td>
+                </tr>
+                <tr>
+                    <td class="label">啮合角 α'</td>
+                    <td class="value" id="infoAlpha">24.9</td>
+                    <td class="unit">°</td>
+                </tr>
+            </table>
+            
+            <div class="section-title"><i class="fas fa-bullseye"></i> 齿轮圆参数 (mm)</div>
+            
+            <div class="circle-grid">
+                <div class="circle-item">
+                    <div class="circle-color" style="background:var(--gear-pitch);"></div>
+                    <span class="circle-name">分度圆</span>
+                    <span class="circle-value" id="valuePitch">500</span>
+                </div>
+                <div class="circle-item">
+                    <div class="circle-color" style="background:var(--gear-root);"></div>
+                    <span class="circle-name">齿根圆</span>
+                    <span class="circle-value" id="valueRoot">475</span>
+                </div>
+                <div class="circle-item">
+                    <div class="circle-color" style="background:var(--gear-add);"></div>
+                    <span class="circle-name">齿顶圆</span>
+                    <span class="circle-value" id="valueAdd">540</span>
+                </div>
+                <div class="circle-item">
+                    <div class="circle-color" style="background:var(--gear-base);"></div>
+                    <span class="circle-name">基圆</span>
+                    <span class="circle-value" id="valueBase">470</span>
+                </div>
+            </div>
+
+            <div class="extra-legend">
+                <span><i class="fas fa-wave-square" style="color:#4e3b61"></i> 啮合线 (紫虚线)</span>
+                <span><i class="fas fa-circle" style="color:#f3c74d"></i> 节点 P (黄)</span>
+            </div>
+            <div style="text-align:center; color:var(--text-sub); font-size:0.85rem; margin-top:10px;">
+                小齿轮(上) · 大齿轮(下)
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-panel">
+        <i class="fas fa-lightbulb" style="color:var(--status-orange)"></i> 采用引线表格形式展示参数 · 滑块调整实时更新 · 啮合角为水平线与啮合线之间的锐角
+    </div>
+</div>
+
+<script>
+(function() {
+    // ==========================================
+    //  机械原理核心逻辑 (原封不动，绝对保留)
+    // ==========================================
+    const m = 20;                // 模数 mm
+    const alphaDeg = 20;          // 压力角 20°
+    const alpha = alphaDeg * Math.PI / 180;
+    const cosAlpha = Math.cos(alpha);
+    const sinAlpha = Math.sin(alpha);
+
+    // ---------- DOM 元素 ----------
+    const canvas = document.getElementById('gearCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const z1Slider = document.getElementById('z1Slider');
+    const z2Slider = document.getElementById('z2Slider');
+    const aSlider = document.getElementById('aSlider');
+    const z1Span = document.getElementById('z1Value');
+    const z2Span = document.getElementById('z2Value');
+    const aSpan = document.getElementById('aValue');
+
+    const infoZ1 = document.getElementById('infoZ1');
+    const infoZ2 = document.getElementById('infoZ2');
+    const infoA = document.getElementById('infoA');
+    const infoStd = document.getElementById('infoStd');
+    const infoAlpha = document.getElementById('infoAlpha');
+    
+    const valuePitch = document.getElementById('valuePitch');
+    const valueRoot = document.getElementById('valueRoot');
+    const valueAdd = document.getElementById('valueAdd');
+    const valueBase = document.getElementById('valueBase');
+
+    let z1 = 30, z2 = 40, a_actual = 725;
+
+    // ---------- 更新所有数值显示 ----------
+    function updateReadouts() {
+        z1 = parseInt(z1Slider.value, 10);
+        z2 = parseInt(z2Slider.value, 10);
+        a_actual = parseFloat(aSlider.value);
+
+        z1Span.innerText = z1;
+        z2Span.innerText = z2;
+        aSpan.innerText = a_actual.toFixed(1);
+
+        infoZ1.innerText = z1;
+        infoZ2.innerText = z2;
+        infoA.innerText = a_actual.toFixed(1);
+
+        const a_std = m * (z1 + z2) / 2;
+        infoStd.innerText = a_std.toFixed(1);
+
+        const cosAlpha_prime = a_std * cosAlpha / a_actual;
+        let alpha_prime_rad;
+        if (cosAlpha_prime > 1) alpha_prime_rad = 0;
+        else if (cosAlpha_prime < -1) alpha_prime_rad = Math.PI;
+        else alpha_prime_rad = Math.acos(cosAlpha_prime);
+        const alpha_prime_deg = (alpha_prime_rad * 180 / Math.PI).toFixed(1);
+        infoAlpha.innerText = alpha_prime_deg;
+
+        const r1 = m * z1 / 2;
+        const ra1 = r1 + m;
+        const rf1 = r1 - 1.25 * m;
+        const rb1 = r1 * cosAlpha;
+        
+        valuePitch.innerText = r1.toFixed(1);
+        valueRoot.innerText = rf1.toFixed(1);
+        valueAdd.innerText = ra1.toFixed(1);
+        valueBase.innerText = rb1.toFixed(1);
+
+        return { a_std, alpha_prime_rad, r1, ra1, rf1, rb1 };
+    }
+
+    // ---------- 绘图 (支持自适应缩放) ----------
+    function draw() {
+        // 先确保 Canvas 分辨率等于 CSS 实际尺寸
+        const container = canvas.parentElement;
+        if (container.clientWidth > 0 && container.clientHeight > 0) {
+            // 避免无限循环或闪烁，仅在需要时赋值
+            if (canvas.width !== container.clientWidth) canvas.width = container.clientWidth;
+            if (canvas.height !== container.clientHeight) canvas.height = container.clientHeight;
+        }
+
+        const params = updateReadouts();
+        const { a_std, alpha_prime_rad, r1, ra1, rf1, rb1 } = params;
+        
+        const r2 = m * z2 / 2;
+        const ra2 = r2 + m;
+        const rf2 = r2 - 1.25 * m;
+        const rb2 = r2 * cosAlpha;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const a = a_actual;
+        const r1_prime = a * z1 / (z1 + z2);
+        const r2_prime = a * z2 / (z1 + z2);
+
+        // 物理坐标: O1(0,0) 上, O2(0,-a) 下
+        const O1 = { x: 0, y: 0 };
+        const O2 = { x: 0, y: -a };
+        const P = { x: 0, y: -r1_prime };
+
+        // 啮合线方向: (cosα', -sinα')
+        const dirX = Math.cos(alpha_prime_rad);
+        const dirY = -Math.sin(alpha_prime_rad);
+
+        // 计算绘图范围
+        const allRMax = Math.max(ra1, ra2, r1, r2, rf1, rf2, rb1, rb2);
+        const margin = 50;
+        const minX = -allRMax - margin;
+        const maxX = allRMax + margin;
+        const minY = Math.min(O2.y - ra2, -allRMax) - margin;
+        const maxY = Math.max(O1.y + ra1, allRMax) + margin;
+
+        const centerX = 0;
+        const centerY = (minY + maxY) / 2;
+
+        const rangeX = maxX - minX;
+        const rangeY = maxY - minY;
+        const scaleX = canvas.width / rangeX;
+        const scaleY = canvas.height / rangeY;
+        const scale = Math.min(scaleX, scaleY) * 0.95; // 留 5% 边距
+
+        ctx.save();
+        // 坐标系居中转换
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(scale, scale);
+        ctx.translate(-centerX, -centerY);
+
+        // 绘制中心连线
+        ctx.beginPath();
+        ctx.moveTo(O1.x, O1.y);
+        ctx.lineTo(O2.x, O2.y);
+        ctx.strokeStyle = '#808080';
+        ctx.lineWidth = 1.5 / scale;
+        ctx.setLineDash([6 / scale, 4 / scale]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        function drawCircle(cx, cy, r, color, width) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width / scale;
+            ctx.stroke();
+        }
+
+        // 小齿轮
+        drawCircle(O1.x, O1.y, r1, '#1f6da9', 2.5);
+        drawCircle(O1.x, O1.y, rf1, '#b95b1a', 2);
+        drawCircle(O1.x, O1.y, ra1, '#2b7a4e', 2.5);
+        drawCircle(O1.x, O1.y, rb1, '#c02f2f', 2);
+        // 大齿轮
+        drawCircle(O2.x, O2.y, r2, '#1f6da9', 2.5);
+        drawCircle(O2.x, O2.y, rf2, '#b95b1a', 2);
+        drawCircle(O2.x, O2.y, ra2, '#2b7a4e', 2.5);
+        drawCircle(O2.x, O2.y, rb2, '#c02f2f', 2);
+
+        // 节点P
+        ctx.beginPath();
+        ctx.arc(P.x, P.y, 8 / scale, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f3c74d';
+        ctx.shadowBlur = 10 / scale;
+        ctx.shadowColor = '#ffb347';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 2 / scale;
+        ctx.stroke();
+
+        // 啮合线
+        const lineLen = 800;
+        const startX = P.x - lineLen * dirX;
+        const startY = P.y - lineLen * dirY;
+        const endX = P.x + lineLen * dirX;
+        const endY = P.y + lineLen * dirY;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = '#4e3b61';
+        ctx.lineWidth = 3.5 / scale;
+        ctx.setLineDash([10 / scale, 8 / scale]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 水平参考线
+        ctx.beginPath();
+        ctx.moveTo(P.x - 200, P.y);
+        ctx.lineTo(P.x + 200, P.y);
+        ctx.strokeStyle = '#aaa';
+        ctx.lineWidth = 1.2 / scale;
+        ctx.setLineDash([5 / scale, 3 / scale]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 啮合角圆弧
+        const arcRadiusPhys = 55;
+        const startAngle = 0;
+        const endAngle = Math.atan2(dirY, dirX);
+        
+        ctx.beginPath();
+        ctx.arc(P.x, P.y, arcRadiusPhys, startAngle, endAngle, true);
+        ctx.strokeStyle = '#aa00aa';
+        ctx.lineWidth = 3 / scale;
+        ctx.stroke();
+
+        const midAngle = startAngle + (endAngle - startAngle) / 2;
+        const labelX = P.x + arcRadiusPhys * 0.8 * Math.cos(midAngle);
+        const labelY = P.y + arcRadiusPhys * 0.8 * Math.sin(midAngle);
+        ctx.fillStyle = '#aa00aa';
+        ctx.font = `bold ${18/scale}px "Segoe UI", "Microsoft YaHei"`;
+        ctx.fillText("α'", labelX, labelY - (5/scale));
+
+        // 标注中心点文字
+        ctx.font = `bold ${14/scale}px "Segoe UI", "Microsoft YaHei"`;
+        ctx.fillStyle = '#000';
+        ctx.fillText('O₁', O1.x - 15/scale, O1.y - 15/scale);
+        ctx.fillText('O₂', O2.x - 15/scale, O2.y + 20/scale);
+        ctx.fillText('P', P.x + 10/scale, P.y - 10/scale);
+
+        ctx.restore();
+    }
+
+    // 事件绑定
+    function handleChange() { draw(); }
+
+    z1Slider.addEventListener('input', handleChange);
+    z2Slider.addEventListener('input', handleChange);
+    aSlider.addEventListener('input', handleChange);
+
+    // 初始化并增加延迟，确保 DOM 容器取得正确宽度后再绘制
+    setTimeout(() => {
+        draw();
+    }, 50);
+
+    // 窗口大小改变时重新绘制（保持画布比例与清晰度）
+    window.addEventListener('resize', draw);
+})();
+</script>
+</body>
+</html>
