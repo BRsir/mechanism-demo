@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>机械原理仿真平台</title>
-    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             /* 统一主题色规范 */
@@ -28,7 +28,7 @@
 
         body {
             height: 100vh;
-            height: 100dvh; /* 适配移动端刘海屏高度 */
+            height: 100dvh;
             background-color: var(--bg-color);
             overflow: hidden;
             display: flex;
@@ -36,88 +36,51 @@
 
         /* --- 移动端遮罩层 --- */
         .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 99;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            z-index: 99; opacity: 0; visibility: hidden; transition: all 0.3s ease;
         }
-        .overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
+        .overlay.active { opacity: 1; visibility: visible; }
 
         /* --- 侧边栏 --- */
         .sidebar {
             width: var(--sidebar-width);
             background: linear-gradient(180deg, var(--primary-color) 0%, #0f172a 100%);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            flex-shrink: 0;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            color: white; display: flex; flex-direction: column;
+            z-index: 100; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; flex-shrink: 0; box-shadow: 4px 0 20px rgba(0,0,0,0.1);
         }
         .sidebar.pc-collapsed { width: 0; overflow: hidden; }
 
         .logo-area {
-            height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            white-space: nowrap;
+            height: 120px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); white-space: nowrap;
         }
         .logo-area h1 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 6px;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 1.3rem; font-weight: 700; margin-bottom: 6px;
+            letter-spacing: 1px; display: flex; align-items: center; gap: 10px;
         }
         .logo-area p { font-size: 0.8rem; color: var(--accent-color); font-weight: 500; }
 
         .nav-menu {
-            flex: 1;
-            padding: 20px 15px;
-            overflow-y: auto;
-            scrollbar-width: none; 
+            flex: 1; padding: 20px 15px; overflow-y: auto; scrollbar-width: none; 
         }
         .nav-menu::-webkit-scrollbar { display: none; }
 
         .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 14px 18px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            border-radius: 12px;
-            transition: all 0.2s;
-            color: var(--text-light);
-            font-size: 0.95rem;
-            white-space: nowrap;
+            display: flex; align-items: center; padding: 14px 18px; margin-bottom: 8px;
+            cursor: pointer; border-radius: 12px; transition: all 0.2s;
+            color: var(--text-light); font-size: 0.95rem; white-space: nowrap;
         }
         .nav-item:hover { background: rgba(255, 255, 255, 0.1); transform: translateX(5px); }
         .nav-item.active {
-            background: white;
-            color: var(--primary-color);
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background: white; color: var(--primary-color);
+            font-weight: 600; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         .nav-item i { width: 30px; font-size: 1.1rem; text-align: center; margin-right: 5px; }
 
-        /* 统计看板专属按钮样式 */
+        /* 全局统计看板按钮样式 */
         .stats-item {
             background: rgba(38, 208, 206, 0.15);
             border: 1px dashed rgba(38, 208, 206, 0.4);
@@ -135,67 +98,36 @@
 
         .sidebar-footer { padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
         .qr-btn {
-            background: rgba(38, 208, 206, 0.15);
-            border: 1px solid rgba(38, 208, 206, 0.4);
-            color: var(--accent-color);
-            padding: 10px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: 0.3s;
-            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 10px; border-radius: 30px; cursor: pointer;
+            font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s;
         }
-        .qr-btn:hover { background: var(--accent-color); color: #0f172a; }
+        .qr-btn:hover { background: white; color: #0f172a; }
 
         /* --- 主内容区 --- */
         .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            position: relative;
+            flex: 1; display: flex; flex-direction: column; width: 100%; position: relative;
         }
 
-        /* 顶部控制条 */
         .top-bar {
-            height: var(--header-height);
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-            z-index: 50;
+            height: var(--header-height); background: white; border-bottom: 1px solid #e2e8f0;
+            display: flex; align-items: center; padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02); z-index: 50;
         }
         .menu-toggle-btn {
-            background: #f1f5f9;
-            border: none;
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
+            background: #f1f5f9; border: none; width: 38px; height: 38px; border-radius: 10px;
+            color: var(--primary-color); font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
         }
         .menu-toggle-btn:hover { background: #e2e8f0; }
         .page-title { margin-left: 15px; font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
 
-        /* Iframe 容器 */
         .iframe-container { flex: 1; width: 100%; height: 100%; position: relative; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; display: block; background: #fff;}
 
         /* --- 弹窗统一样式 --- */
         .modal-mask {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px);
             z-index: 200; justify-content: center; align-items: center;
             opacity: 0; transition: opacity 0.3s;
@@ -207,7 +139,7 @@
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative;
         }
         .modal-mask.show .modal-card { transform: scale(1); }
-
+        
         /* 数据统计弹窗专属样式 */
         .stats-card { max-width: 650px; padding: 30px; }
         .stats-header {
@@ -229,7 +161,6 @@
         }
         .modal-close:hover { background: #e2e8f0; color: var(--primary-color);}
 
-        /* --- 移动端响应式 --- */
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed; top: 0; left: 0; height: 100%; height: 100dvh; 
@@ -251,40 +182,33 @@
 
     <div class="sidebar" id="sidebar">
         <div class="logo-area">
-            <h1><i class="fas fa-layer-group"></i>机械原理仿真平台</h1>
+            <h1><i class="fas fa-layer-group"></i>机械原理仿真</h1>
             <p>Mechanics Simulation Lab</p>
         </div>
 
         <div class="nav-menu">
-            <div class="nav-item active" onclick="loadDemo(this, '1_qubingchonghedian.html', '曲柄摇块速度/加速度分析')">
-                <i class="fas fa-project-diagram"></i>
-                <span>曲柄摇块速度/加速度分析</span>
+            <div class="nav-item active" onclick="loadDemo(this, '1_qubingchonghedian.html', '曲柄摇块运动学分析')">
+                <i class="fas fa-project-diagram"></i><span>曲柄摇块运动学分析</span>
             </div>
-            <div class="nav-item" onclick="loadDemo(this, '2_siganleixing.html', '四杆机构类型分析')">
-                <i class="fas fa-cogs"></i>
-                <span>四杆机构类型判断</span>
+            <div class="nav-item" onclick="loadDemo(this, '2_siganleixing.html', '四杆机构类型判断')">
+                <i class="fas fa-cogs"></i><span>四杆机构类型判断</span>
             </div>
             <div class="nav-item" onclick="loadDemo(this, '3_siganchuandongjiao.html', '四杆机构传动角')">
-                <i class="fas fa-drafting-compass"></i>
-                <span>四杆机构传动角</span>
+                <i class="fas fa-drafting-compass"></i><span>四杆机构传动角</span>
             </div>
             <div class="nav-item" onclick="loadDemo(this, '4_tulunyalijiao.html', '滚子凸轮压力角')">
-                <i class="fas fa-chart-area"></i>
-                <span>滚子凸轮压力角</span>
+                <i class="fas fa-chart-area"></i><span>滚子凸轮压力角</span>
             </div>
             <div class="nav-item" onclick="loadDemo(this, '5_gunzilunkuo.html', '滚子凸轮轮廓设计')">
-                <i class="fas fa-bezier-curve"></i>
-                <span>滚子凸轮轮廓设计</span>
+                <i class="fas fa-bezier-curve"></i><span>滚子凸轮轮廓设计</span>
             </div>
             <div class="nav-item" onclick="loadDemo(this, '6_pingdilunkuo.html', '平底推杆凸轮轮廓')">
-                <i class="fas fa-wave-square"></i>
-                <span>平底推杆凸轮轮廓</span>
+                <i class="fas fa-wave-square"></i><span>平底推杆凸轮轮廓</span>
             </div>
             <div class="nav-item" onclick="loadDemo(this, '7_chilunniehejiao.html', '齿轮啮合角分析')">
-                <i class="fas fa-cog"></i>
-                <span>齿轮啮合角分析</span>
+                <i class="fas fa-cog"></i><span>齿轮啮合角分析</span>
             </div>
-
+            
             <div class="nav-item stats-item" onclick="openStatsModal()">
                 <i class="fas fa-globe"></i>
                 <span>全网学习数据总览</span>
@@ -293,7 +217,7 @@
 
         <div class="sidebar-footer">
             <div class="qr-btn" onclick="openModal('qrModal')">
-                <i class="fas fa-qrcode"></i> 手机扫码体验
+                <i class="fas fa-mobile-alt"></i> 手机扫码体验
             </div>
         </div>
     </div>
@@ -303,17 +227,17 @@
             <button class="menu-toggle-btn" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
-            <span class="page-title" id="pageTitle">曲柄摇块速度/加速度分析</span>
+            <span class="page-title" id="pageTitle">曲柄摇块机构速度与加速度分析</span>
         </div>
         <div class="iframe-container">
-            <iframe id="contentFrame" src="1_qubingchonghedian.html" scrolling="yes"></iframe>
+            <iframe id="contentFrame" src="1_qubingchonghedian.html"></iframe>
         </div>
     </div>
 
     <div class="modal-mask" id="qrModal" onclick="closeModal('qrModal', event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h3 style="color:var(--primary-color); margin-bottom:10px; text-align:center;">扫码在手机端操作</h3>
-            <p style="color:#64748b; font-size:0.9rem; margin-bottom:20px; text-align:center;">使用手机浏览器或微信扫描下方二维码</p>
+            <p style="color:#64748b; font-size:0.9rem; margin-bottom:20px; text-align:center;">使用手机浏览器扫描下方二维码</p>
             <div id="qrcode" style="display:flex; justify-content:center; margin-bottom:20px;"></div>
             <button class="modal-close" onclick="closeModal('qrModal')">关 闭</button>
         </div>
@@ -326,7 +250,7 @@
                 <i class="fas fa-times" style="cursor:pointer; color:#94a3b8; font-size:1.2rem;" onclick="closeModal('statsModal')"></i>
             </div>
             <p style="color:#64748b; font-size:0.85rem; margin-top:-10px; margin-bottom:15px;">
-                <i class="fas fa-cloud-upload-alt"></i> 数据实时同步至 Upstash Serverless 云端数据库
+                <i class="fas fa-info-circle"></i> 有效学习记录说明：单次浏览时长超过 2 分钟方可计入总时长
             </p>
             <div class="stats-table-container">
                 <table class="stats-table">
@@ -334,7 +258,7 @@
                         <tr>
                             <th>仿真教程名称</th>
                             <th style="text-align:center;">全网打开次数</th>
-                            <th style="text-align:right;">全网总学习时长</th>
+                            <th style="text-align:right;">全网有效总时长</th>
                         </tr>
                     </thead>
                     <tbody id="statsTableBody">
@@ -347,7 +271,7 @@
 
     <script>
         // =========================================================
-        // 【核心配置】请填入您在 Upstash 控制台获取的两个值
+        // 【核心配置】已写入您的 Upstash 密钥
         // =========================================================
         const UPSTASH_URL = "https://faithful-swift-4021.upstash.io"; 
         const UPSTASH_TOKEN = "AQ-1AAImcDI0NDQzOTFmMjhjNmY0MGU1YTdhN2MyYzdjZTFiYjkzZnAyNDAyMQ";
@@ -361,8 +285,7 @@
         const pageTitle = document.getElementById('pageTitle');
 
         function toggleSidebar() {
-            const isMobile = window.innerWidth <= 768;
-            if (isMobile) {
+            if (window.innerWidth <= 768) {
                 sidebar.classList.toggle('mobile-open');
                 overlay.classList.toggle('active');
             } else {
@@ -385,7 +308,7 @@
         // Upstash API 数据追踪系统
         // =========================================================
         const DEMO_LIST = [
-            { id: "1_qubingchonghedian.html", title: "曲柄摇块速度/加速度分析" },
+            { id: "1_qubingchonghedian.html", title: "曲柄摇块运动学分析" },
             { id: "2_siganleixing.html", title: "四杆机构类型判断" },
             { id: "3_siganchuandongjiao.html", title: "四杆机构传动角" },
             { id: "4_tulunyalijiao.html", title: "滚子凸轮压力角" },
@@ -408,36 +331,45 @@
             return `${seconds} 秒`;
         }
 
-        // 记录访问次数 (+1)
+        // 格式化基础 URL，防止末尾有多余的斜杠
+        function getBaseUrl() {
+            return UPSTASH_URL.replace(/\/$/, '');
+        }
+
+        // 记录访问次数 (+1) - 打开即算一次点击
         function reportView(id) {
             if (!UPSTASH_URL.startsWith('http')) return;
-            fetch(`${UPSTASH_URL}/incr/count:${id}`, {
+            fetch(`${getBaseUrl()}/incr/count:${id}`, {
                 headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` }
             }).catch(e => console.warn("计数上报失败", e));
         }
 
-        // 记录停留时长 (+ms)
+        // 记录有效停留时长 (超过2分钟才发送云端)
         function reportTime(id, durationMs) {
-            if (!UPSTASH_URL.startsWith('http') || durationMs < 1000) return; // 过滤小于1秒的误触
-            // 使用 keepalive 确保在页面关闭或刷新时请求能发出去
-            fetch(`${UPSTASH_URL}/incrby/time:${id}/${durationMs}`, {
+            // 阈值：120000 毫秒 = 2 分钟 (低于此时间不计入总时长)
+            if (!UPSTASH_URL.startsWith('http') || durationMs < 120000) {
+                console.log(`页面 ${id} 停留时间为 ${Math.floor(durationMs/1000)} 秒，未达到 2 分钟，不计入云端总时长。`);
+                return; 
+            }
+            
+            fetch(`${getBaseUrl()}/incrby/time:${id}/${durationMs}`, {
                 headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
                 keepalive: true 
             }).catch(e => console.warn("时长上报失败", e));
         }
 
-        // 页面初始化时记录默认的第一页
+        // 页面初始化时记录默认的第一页的访问次数
         window.addEventListener('DOMContentLoaded', () => {
             reportView(currentDemoId);
         });
 
         // 拦截左侧菜单点击，处理页面切换
         function loadDemo(element, url, title) {
-            // 1. 结算旧页面的时长并上报
+            // 1. 结算旧页面的时长并上报（会判定是否超过2分钟）
             const duration = Date.now() - entryTime;
             reportTime(currentDemoId, duration);
 
-            // 2. 更新UI样式
+            // 2. 更新UI激活状态
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             element.classList.add('active');
             pageTitle.textContent = title;
@@ -454,7 +386,7 @@
                 toggleSidebar();
             }
 
-            // 5. 开始追踪新页面
+            // 5. 开始追踪新页面，增加打开次数
             currentDemoId = url;
             entryTime = Date.now();
             reportView(currentDemoId);
@@ -494,14 +426,14 @@
 
         // 打开统计弹窗并从 Upstash 获取数据
         async function openStatsModal() {
-            // 打开前先结算一下当前的实时时间，确保你刚看的时间也能被算进去
+            // 打开前先结算一下当前的实时时间，判断是否发送
             const duration = Date.now() - entryTime;
             reportTime(currentDemoId, duration);
             entryTime = Date.now(); // 重置计测起点
 
             const tbody = document.getElementById('statsTableBody');
             
-            // 安全检查：如果没填配置，提示用户
+            // 安全检查
             if (!UPSTASH_URL.startsWith('http')) {
                 openModal('statsModal');
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#e74c3c;"><i class="fas fa-exclamation-triangle"></i> 您还没有配置数据库密钥！<br>请在代码底部填入 Upstash URL 和 Token</td></tr>';
@@ -511,26 +443,34 @@
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> 正在极速拉取云端数据...</td></tr>';
             openModal('statsModal');
 
-            // 构建 Redis 的 MGET 批量获取命令
+            // 准备批量拉取指令数组
             const keysToFetch = [];
             DEMO_LIST.forEach(d => {
                 keysToFetch.push(`count:${d.id}`);
                 keysToFetch.push(`time:${d.id}`);
             });
 
+            // Upstash 官方标准批量获取规范：根路径 POST 请求，载荷形式为 ["MGET", "key1", "key2"]
+            const payload = ["MGET", ...keysToFetch];
+
             try {
-                const response = await fetch(`${UPSTASH_URL}/mget`, {
+                const response = await fetch(`${getBaseUrl()}/`, {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${UPSTASH_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(keysToFetch)
+                    body: JSON.stringify(payload)
                 });
                 
                 const data = await response.json();
-                const values = data.result; 
                 
+                // 若出现API权限或地址错误，抛出异常
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                const values = data.result || [];
                 tbody.innerHTML = '';
                 
                 // 将返回的数据按顺序解析填入表格
@@ -548,7 +488,7 @@
                 });
 
             } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#e74c3c;"><i class="fas fa-times-circle"></i> 网络请求失败，请检查数据库配置是否正确</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#e74c3c;"><i class="fas fa-times-circle"></i> 数据拉取失败，请检查 URL 格式及 Token 是否正确<br><br><span style="font-size:0.8rem;color:#94a3b8;">${error.message}</span></td></tr>`;
                 console.error(error);
             }
         }
